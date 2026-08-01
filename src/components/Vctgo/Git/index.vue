@@ -9,7 +9,7 @@ export default {
   name: 'VctgoGit',
   data() {
     return {
-      url: 'https://github.com/roinli/HUIZHI-ChargeOS-cloud'
+      url: 'https://www.hist.edu.cn/'  //https://github.com/roinli/HUIZHI-ChargeOS-cloud
     }
   },
   methods: {

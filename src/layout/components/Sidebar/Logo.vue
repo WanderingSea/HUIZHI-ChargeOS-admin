@@ -50,7 +50,7 @@
 
 <script>
 import { getInfo } from "@/api/login";
-import logoImg from "@/assets/logo/logo.png";
+import logoImg from "@/assets/logo/logo.svg";
 import variables from "@/assets/styles/variables.scss";
 
 export default {
@@ -71,7 +71,7 @@ export default {
   },
   data() {
     return {
-      title: '慧知开源充电桩平台',
+      title: '旭智充充电桩后台管理',
       logo: logoImg,
     };
   },

@@ -1,10 +1,5 @@
 <template>
   <div class="login">
-    <section class="codes">
-      <img src="../assets/logo/gzh.jpg" class="code code0"/>
-      <img src="../assets/logo/file-read.jpg" class="code code2" />
-      <img src="../assets/logo/lwh.jpg" class="code code1"/>
-    </section>
     <el-form
       ref="loginForm"
       :model="loginForm"
@@ -18,7 +13,7 @@
           style="height: 20px; display: inline-block; margin-right: 10px"
         />
         <h3 class="title" style="display: inline-block; font-size: 25px">
-          慧知开源充电桩平台
+          旭智充充电桩平台
         </h3>
       </div>
       <el-form-item prop="username">
@@ -94,9 +89,9 @@
     <!--  底部  -->
     <div class="el-login-footer">
       <strong
-        >版权所有 Copyright &copy; 2022-2023 &nbsp;
-        <a href="http://www.vctgo.com/" target="_blank">慧知开源充电桩平台</a
-        >&nbsp;&nbsp;技术支持：中科慧知（苏州）智能科技有限公司 </strong
+        >版权所有 Copyright &copy; 2026-2027 &nbsp;
+        <a href="http://www.vctgo.com/" target="_blank">旭智充充电桩平台</a
+        >&nbsp;&nbsp;技术支持：河南科技学院-计算机科学与技术学院 </strong
       ><!-- All rights reserved. -->
       <!--      <span>Copyright © 2018-2022 www.vctgo.com All Rights Reserved.</span>-->
     </div>
@@ -107,7 +102,7 @@
 import { getCodeImg } from "@/api/login";
 import Cookies from "js-cookie";
 import { encrypt, decrypt } from "@/utils/jsencrypt";
-import logoImg from "@/assets/logo/logo.png";
+import logoImg from "@/assets/logo/logo.svg";
 
 export default {
   name: "Login",
@@ -251,6 +246,7 @@ export default {
   width: 400px;
   padding: 25px 25px 5px 25px;
   margin-left: 60%;
+
   .el-input {
     height: 38px;
     input {

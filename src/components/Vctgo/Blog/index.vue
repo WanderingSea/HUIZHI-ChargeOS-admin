@@ -9,7 +9,7 @@ export default {
   name: 'VctgoBlog',
   data() {
     return {
-      url: 'http://wenhui.huizhidata.com/'
+      url: 'https://www.hist.edu.cn/'  //http://wenhui.huizhidata.com/
     }
   },
   methods: {
