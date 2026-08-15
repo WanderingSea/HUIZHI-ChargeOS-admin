@@ -16,26 +16,24 @@
           旭智充充电桩平台
         </h3>
       </div>
-      <el-form-item prop="username">
+      <el-form-item prop="phone">
         <el-input
-          v-model="loginForm.username"
+          v-model="loginForm.phone"
           type="text"
           auto-complete="off"
-          placeholder="账号"
+          placeholder="请输入手机号"
+          maxlength="11"
         >
-          <svg-icon
-            slot="prefix"
-            icon-class="user"
-            class="el-input__icon input-icon"
-          />
+          <i slot="prefix" class="el-input__icon el-icon-mobile"></i>
         </el-input>
       </el-form-item>
       <el-form-item prop="password">
         <el-input
           v-model="loginForm.password"
           type="password"
+          show-password
           auto-complete="off"
-          placeholder="密码"
+          placeholder="请输入密码"
           @keyup.enter.native="handleLogin"
         >
           <svg-icon
@@ -45,22 +43,19 @@
           />
         </el-input>
       </el-form-item>
-      <el-form-item prop="code" v-if="captchaEnabled">
+      <el-form-item prop="code">
         <el-input
           v-model="loginForm.code"
           auto-complete="off"
-          placeholder="验证码"
-          style="width: 63%"
+          placeholder="请输入图形验证码"
+          maxlength="4"
+          style="width: 60%"
           @keyup.enter.native="handleLogin"
         >
-          <svg-icon
-            slot="prefix"
-            icon-class="validCode"
-            class="el-input__icon input-icon"
-          />
+          <i slot="prefix" class="el-input__icon el-icon-key"></i>
         </el-input>
-        <div class="login-code">
-          <img :src="codeUrl" @click="getCode" class="login-code-img" />
+        <div class="login-code" @click="refreshCode">
+          <img v-if="codeUrl" :src="codeUrl" alt="验证码" class="captcha-img" />
         </div>
       </el-form-item>
       <el-checkbox
@@ -79,11 +74,6 @@
           <span v-if="!loading">登 录</span>
           <span v-else>登 录 中...</span>
         </el-button>
-        <div style="float: right" v-if="register">
-          <router-link class="link-type" :to="'/register'"
-            >立即注册</router-link
-          >
-        </div>
       </el-form-item>
     </el-form>
     <!--  底部  -->
@@ -92,16 +82,15 @@
         >版权所有 Copyright &copy; 2026-2027 &nbsp;
         <a href="http://www.vctgo.com/" target="_blank">旭智充充电桩平台</a
         >&nbsp;&nbsp;技术支持：河南科技学院-计算机科学与技术学院 </strong
-      ><!-- All rights reserved. -->
-      <!--      <span>Copyright © 2018-2022 www.vctgo.com All Rights Reserved.</span>-->
+      >
     </div>
   </div>
 </template>
 
 <script>
-import { getCodeImg } from "@/api/login";
 import Cookies from "js-cookie";
 import { encrypt, decrypt } from "@/utils/jsencrypt";
+import { getCodeImg } from "@/api/login";
 import logoImg from "@/assets/logo/logo.svg";
 
 export default {
@@ -111,15 +100,16 @@ export default {
       logo: logoImg,
       codeUrl: "",
       loginForm: {
-        username: "admin",
-        password: "admin123",
-        rememberMe: false,
+        phone: "",
+        password: "",
         code: "",
         uuid: "",
+        rememberMe: false,
       },
       loginRules: {
-        username: [
-          { required: true, trigger: "blur", message: "请输入您的账号" },
+        phone: [
+          { required: true, trigger: "blur", message: "请输入手机号" },
+          { pattern: /^1[3-9]\d{9}$/, message: "请输入正确的手机号", trigger: "blur" }
         ],
         password: [
           { required: true, trigger: "blur", message: "请输入您的密码" },
@@ -127,10 +117,6 @@ export default {
         code: [{ required: true, trigger: "change", message: "请输入验证码" }],
       },
       loading: false,
-      // 验证码开关
-      captchaEnabled: true,
-      // 注册开关
-      register: false,
       redirect: undefined,
     };
   },
@@ -143,26 +129,23 @@ export default {
     },
   },
   created() {
-    this.getCode();
     this.getCookie();
+    this.refreshCode();
   },
   methods: {
-    getCode() {
-      getCodeImg().then((res) => {
-        this.captchaEnabled =
-          res.captchaEnabled === undefined ? true : res.captchaEnabled;
-        if (this.captchaEnabled) {
-          this.codeUrl = "data:image/gif;base64," + res.img;
-          this.loginForm.uuid = res.uuid;
-        }
+    refreshCode() {
+      getCodeImg().then(res => {
+        this.codeUrl = "data:image/gif;base64," + res.img;
+        this.loginForm.uuid = res.uuid;
       });
     },
     getCookie() {
-      const username = Cookies.get("username");
+      const phone = Cookies.get("phone");
       const password = Cookies.get("password");
       const rememberMe = Cookies.get("rememberMe");
       this.loginForm = {
-        username: username === undefined ? this.loginForm.username : username,
+        ...this.loginForm,
+        phone: phone === undefined ? this.loginForm.phone : phone,
         password:
           password === undefined ? this.loginForm.password : decrypt(password),
         rememberMe: rememberMe === undefined ? false : Boolean(rememberMe),
@@ -173,7 +156,7 @@ export default {
         if (valid) {
           this.loading = true;
           if (this.loginForm.rememberMe) {
-            Cookies.set("username", this.loginForm.username, { expires: 30 });
+            Cookies.set("phone", this.loginForm.phone, { expires: 30 });
             Cookies.set("password", encrypt(this.loginForm.password), {
               expires: 30,
             });
@@ -181,20 +164,23 @@ export default {
               expires: 30,
             });
           } else {
-            Cookies.remove("username");
+            Cookies.remove("phone");
             Cookies.remove("password");
             Cookies.remove("rememberMe");
           }
           this.$store
-            .dispatch("Login", this.loginForm)
+            .dispatch("Login", {
+              phone: this.loginForm.phone,
+              password: this.loginForm.password,
+              code: this.loginForm.code,
+              uuid: this.loginForm.uuid,
+            })
             .then(() => {
               this.$router.push({ path: this.redirect || "/" }).catch(() => {});
             })
             .catch(() => {
               this.loading = false;
-              if (this.captchaEnabled) {
-                this.getCode();
-              }
+              this.refreshCode();
             });
         }
       });
@@ -219,27 +205,6 @@ export default {
   text-align: center;
   color: #707070;
 }
-.codes{
-  width: 600px;
-  display: inline-block;
-  position: absolute;
-}
-.code{
-  width: 120px;
-  margin-right: 20px;
-}
-.code0{
-  width: 132px;
-  position: relative;
-  top: 4px;
-}
-.code2-wrapper{
-  width: 130px;
-  text-align: center;
-}
-.code2{
-  width: 120px;
-}
 .login-form {
   border-radius: 6px;
   background: #ffffff;
@@ -259,19 +224,23 @@ export default {
     margin-left: 2px;
   }
 }
-.login-tip {
-  font-size: 13px;
-  text-align: center;
-  color: #bfbfbf;
-}
 .login-code {
-  width: 33%;
+  width: 38%;
   height: 38px;
   float: right;
-  img {
-    cursor: pointer;
-    vertical-align: middle;
+  cursor: pointer;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #dcdfe6;
+  transition: border-color 0.2s;
+  &:hover {
+    border-color: #409EFF;
   }
+}
+.captcha-img {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 .el-login-footer {
   height: 40px;
@@ -284,8 +253,5 @@ export default {
   font-family: Arial;
   font-size: 12px;
   letter-spacing: 1px;
-}
-.login-code-img {
-  height: 38px;
 }
 </style>
