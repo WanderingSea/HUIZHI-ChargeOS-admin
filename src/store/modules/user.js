@@ -43,19 +43,19 @@ const user = {
   actions: {
     // 登录
     Login({ commit }, userInfo) {
-      const username = userInfo.username.trim()
+      const phone = userInfo.phone.trim()
       const password = userInfo.password
       const code = userInfo.code
       const uuid = userInfo.uuid
       return new Promise((resolve, reject) => {
-        login(username, password, code, uuid).then(res => {
+        login(phone, password, code, uuid).then(res => {
           let data = res.data
-          setToken(data.access_token)
-          commit('SET_TOKEN', data.access_token)
-          setExpiresIn(data.expires_in)
-          commit('SET_EXPIRES_IN', data.expires_in)
-          setTenant(data.tenant_id)
-          commit('SET_TENANT_ID', data.tenant_id)
+          setToken(data.token)
+          commit('SET_TOKEN', data.token)
+          setExpiresIn(data.expiresIn)
+          commit('SET_EXPIRES_IN', data.expiresIn)
+          setTenant(data.merchantId)
+          commit('SET_TENANT_ID', data.merchantId)
           resolve()
         }).catch(error => {
           reject(error)
@@ -67,7 +67,7 @@ const user = {
     GetInfo({ commit, state }) {
       return new Promise((resolve, reject) => {
         getInfo().then(res => {
-          const user = res.user
+          const user = res.body
           const avatar = (user.avatar == "" || user.avatar == null) ? require("@/assets/images/profile.png") : process.env.VUE_APP_BASE_API+'/file'+user.avatar;
           if (res.roles && res.roles.length > 0) { // 验证返回的roles是否是一个非空数组
             commit('SET_ROLES', res.roles)
@@ -75,8 +75,8 @@ const user = {
           } else {
             commit('SET_ROLES', ['ROLE_DEFAULT'])
           }
-          commit('SET_ID', user.userId)
-          commit('SET_NAME', user.userName)
+          commit('SET_ID', user.accountId)
+          commit('SET_NAME', user.nickName)
           commit('SET_AVATAR', avatar)
           resolve(res)
         }).catch(error => {
