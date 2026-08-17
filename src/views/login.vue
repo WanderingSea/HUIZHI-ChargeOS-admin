@@ -81,8 +81,8 @@
       <strong
         >版权所有 Copyright &copy; 2026-2027 &nbsp;
         <a href="http://www.vctgo.com/" target="_blank">旭智充充电桩平台</a
-        >&nbsp;&nbsp;技术支持：河南科技学院-计算机科学与技术学院 </strong
-      >
+        >&nbsp;&nbsp;技术支持：河南科技学院-计算机科学与技术学院
+      </strong>
     </div>
   </div>
 </template>
@@ -109,7 +109,11 @@ export default {
       loginRules: {
         phone: [
           { required: true, trigger: "blur", message: "请输入手机号" },
-          { pattern: /^1[3-9]\d{9}$/, message: "请输入正确的手机号", trigger: "blur" }
+          {
+            pattern: /^1[3-9]\d{9}$/,
+            message: "请输入正确的手机号",
+            trigger: "blur",
+          },
         ],
         password: [
           { required: true, trigger: "blur", message: "请输入您的密码" },
@@ -134,7 +138,7 @@ export default {
   },
   methods: {
     refreshCode() {
-      getCodeImg().then(res => {
+      getCodeImg().then((res) => {
         this.codeUrl = "data:image/gif;base64," + res.img;
         this.loginForm.uuid = res.uuid;
       });
@@ -198,7 +202,7 @@ export default {
   background-image: url("../assets/images/login-background3.png");
   background-position: left bottom;
   background-repeat: no-repeat;
-  background-color: #F3F6FF;
+  background-color: #f3f6ff;
 }
 .title {
   margin: 0px auto 30px auto;
@@ -234,7 +238,7 @@ export default {
   border: 1px solid #dcdfe6;
   transition: border-color 0.2s;
   &:hover {
-    border-color: #409EFF;
+    border-color: #409eff;
   }
 }
 .captcha-img {

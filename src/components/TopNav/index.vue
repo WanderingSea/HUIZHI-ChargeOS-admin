@@ -5,26 +5,35 @@
     @select="handleSelect"
   >
     <template v-for="(item, index) in topMenus">
-      <el-menu-item :style="{'--theme': theme}" :index="item.path" :key="index" v-if="index < visibleNumber"
-      ><svg-icon
-        v-if="item.meta && item.meta.icon && item.meta.icon !== '#'"
-        :icon-class="item.meta.icon"
-      />
-        {{ item.meta.title }}</el-menu-item>
+      <el-menu-item
+        :style="{ '--theme': theme }"
+        :index="item.path"
+        :key="index"
+        v-if="index < visibleNumber"
+        ><svg-icon
+          v-if="item.meta && item.meta.icon && item.meta.icon !== '#'"
+          :icon-class="item.meta.icon"
+        />
+        {{ item.meta.title }}</el-menu-item
+      >
     </template>
 
     <!-- 顶部菜单超出数量折叠 -->
-    <el-submenu :style="{'--theme': theme}" index="more" v-if="topMenus.length > visibleNumber">
+    <el-submenu
+      :style="{ '--theme': theme }"
+      index="more"
+      v-if="topMenus.length > visibleNumber"
+    >
       <template slot="title">更多菜单</template>
       <template v-for="(item, index) in topMenus">
         <el-menu-item
           :index="item.path"
           :key="index"
           v-if="index >= visibleNumber"
-        ><svg-icon
-          v-if="item.meta && item.meta.icon && item.meta.icon !== '#'"
-          :icon-class="item.meta.icon"
-        />
+          ><svg-icon
+            v-if="item.meta && item.meta.icon && item.meta.icon !== '#'"
+            :icon-class="item.meta.icon"
+          />
           {{ item.meta.title }}</el-menu-item
         >
       </template>
@@ -36,6 +45,7 @@
 import { constantRoutes } from "@/router";
 
 export default {
+  name: "TopNav",
   data() {
     return {
       // 顶部栏初始数
@@ -43,7 +53,7 @@ export default {
       // 是否为首次加载
       isFrist: false,
       // 当前激活菜单的 index
-      currentIndex: undefined
+      currentIndex: undefined,
     };
   },
   computed: {
@@ -75,11 +85,13 @@ export default {
       this.routers.map((router) => {
         for (var item in router.children) {
           if (router.children[item].parentPath === undefined) {
-            if(router.path === "/") {
-              router.children[item].path = "/redirect/" + router.children[item].path;
+            if (router.path === "/") {
+              router.children[item].path =
+                "/redirect/" + router.children[item].path;
             } else {
-              if(!this.ishttp(router.children[item].path)) {
-                router.children[item].path = router.path + "/" + router.children[item].path;
+              if (!this.ishttp(router.children[item].path)) {
+                router.children[item].path =
+                  router.path + "/" + router.children[item].path;
               }
             }
             router.children[item].parentPath = router.path;
@@ -105,17 +117,17 @@ export default {
       }
       var routes = this.activeRoutes(activePath);
       if (routes.length === 0) {
-        activePath = this.currentIndex || this.defaultRouter()
+        activePath = this.currentIndex || this.defaultRouter();
         this.activeRoutes(activePath);
       }
       return activePath;
     },
   },
   beforeMount() {
-    window.addEventListener('resize', this.setVisibleNumber)
+    window.addEventListener("resize", this.setVisibleNumber);
   },
   beforeDestroy() {
-    window.removeEventListener('resize', this.setVisibleNumber)
+    window.removeEventListener("resize", this.setVisibleNumber);
   },
   mounted() {
     this.setVisibleNumber();
@@ -149,6 +161,19 @@ export default {
       } else {
         // 显示左侧联动菜单
         this.activeRoutes(key);
+        // 跳转到该菜单下的第一个子路由
+        const menu = this.topMenus.find((m) => m.path === key);
+        if (menu && menu.children && menu.children.length > 0) {
+          const firstChild = menu.children[0];
+          const targetPath = firstChild.path.startsWith("/")
+            ? firstChild.path
+            : `${menu.path}/${firstChild.path}`;
+          this.$router.push({ path: targetPath });
+        } else if (menu && menu.redirect) {
+          this.$router.push({ path: menu.redirect });
+        } else {
+          this.$router.push({ path: key });
+        }
       }
     },
     // 当前激活的路由
@@ -161,14 +186,14 @@ export default {
           }
         });
       }
-      if(routes.length > 0) {
+      if (routes.length > 0) {
         this.$store.commit("SET_SIDEBAR_ROUTERS", routes);
       }
       return routes;
     },
     ishttp(url) {
-      return url.indexOf('http://') !== -1 || url.indexOf('https://') !== -1
-    }
+      return url.indexOf("http://") !== -1 || url.indexOf("https://") !== -1;
+    },
   },
 };
 </script>
@@ -183,8 +208,9 @@ export default {
   margin: 0 10px !important;
 }
 
-.topmenu-container.el-menu--horizontal > .el-menu-item.is-active, .el-menu--horizontal > .el-submenu.is-active .el-submenu__title {
-  border-bottom: 2px solid #{'var(--theme)'} !important;
+.topmenu-container.el-menu--horizontal > .el-menu-item.is-active,
+.el-menu--horizontal > .el-submenu.is-active .el-submenu__title {
+  border-bottom: 2px solid #{"var(--theme)"} !important;
   color: #303133;
 }
 

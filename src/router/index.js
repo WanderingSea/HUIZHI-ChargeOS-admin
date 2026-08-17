@@ -62,29 +62,42 @@ export const constantRoutes = [
     hidden: true,
   },
   {
-    path: "",
+    path: "/dashboard",
+    name: "Dashboard",
+    component: () => import("@/views/workbench/dashboard"),
+    hidden: true,
+    meta: { title: "充电总览", noCache: true },
+  },
+  {
+    path: "/workbench",
     component: Layout,
-    redirect: "workbench",
+    redirect: "/workbench/index",
+    meta: { title: "工作台", icon: "home" },
     children: [
       {
-        path: "workbench",
-        component: () => import("@/views/index_v1"),
+        path: "index",
+        component: () => import("@/views/workbench/overview"),
         name: "Workbench",
         meta: { title: "工作台", icon: "home", affix: true },
       },
     ],
   },
   {
-    path: "/manage",
+    path: "",
     component: Layout,
+    redirect: "/workbench/index",
     children: [
       {
         path: "index",
         component: () => import("@/views/index"),
         name: "Index",
-        meta: { title: "经营管理", icon: "dashboard", affix: false },
+        meta: { title: "经营管理", icon: "dashboard", affix: true },
       },
     ],
+  },
+  {
+    path: "/",
+    redirect: "/workbench/index",
   },
   {
     path: "/user",
