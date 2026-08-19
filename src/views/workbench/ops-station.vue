@@ -53,7 +53,10 @@
           <i class="el-icon-data-analysis"></i>
           平台规则
         </button>
-        <button class="action-btn download-btn" @click="handleExport">
+        <button
+          class="action-btn download-btn"
+          @click="showDownloadCenter = true"
+        >
           <i class="el-icon-download"></i>
           下载中心
         </button>
@@ -97,7 +100,7 @@
             type="date"
             value-format="yyyy-MM-dd"
             size="default"
-            style="width: 160px"
+            style="width: 140px"
           />
           <span class="filter-sep">至</span>
           <el-date-picker
@@ -105,7 +108,7 @@
             type="date"
             value-format="yyyy-MM-dd"
             size="default"
-            style="width: 160px"
+            style="width: 140px"
           />
         </div>
         <div class="filter-item">
@@ -114,7 +117,7 @@
             v-model="filter.stationName"
             placeholder="请输入电站名称"
             size="default"
-            style="width: 240px"
+            style="width: 200px"
             clearable
           />
         </div>
@@ -124,7 +127,7 @@
             v-model="filter.operator"
             placeholder="全部运营商"
             size="default"
-            style="width: 180px"
+            style="width: 160px"
             clearable
           >
             <el-option label="同星新能源" value="1" /><el-option
@@ -187,7 +190,7 @@
           ></el-tooltip>
         </div>
         <div class="table-tools">
-          <button class="export-simple-btn" @click="handleExport">
+          <button class="export-simple-btn" @click="doExportTable">
             <i class="el-icon-download"></i>导出
           </button>
         </div>
@@ -327,11 +330,17 @@
       ><span>Copyright©2016Co.,Ltd.All Rights Reserved</span
       ><span>版权所有：江苏云快充新能源科技有限公司</span>
     </div>
+
+    <download-center-dialog :visible.sync="showDownloadCenter" />
   </div>
 </template>
 <script>
+import DownloadCenterDialog from "../../components/DownloadCenterDialog.vue";
+import { exportToCSV } from "../../utils/exportCSV";
+
 export default {
   name: "OpsStation",
+  components: { DownloadCenterDialog },
   data() {
     return {
       activeTopTab: "ops-station",
@@ -340,6 +349,7 @@ export default {
       dateEnd: "2026-08-19",
       showMore: false,
       filter: { stationName: "", operator: "", stationType: "", area: "" },
+      showDownloadCenter: false,
       currentPage: 1,
       pageSize: 10,
       jumpPage: 1,
@@ -462,14 +472,35 @@ export default {
       this.showMore = false;
       this.currentPage = 1;
     },
+    doExportTable() {
+      const columns = [
+        { label: "电站名称", prop: "stationName" },
+        { label: "电站ID", prop: "id" },
+        { label: "运营商", prop: "operator" },
+        { label: "终端数量", prop: "terminalCount" },
+        { label: "电量(度)", prop: "totalPower" },
+        { label: "充电时长(小时)", prop: "chargeHours" },
+        { label: "充电次数(次)", prop: "totalCount" },
+        { label: "电费(元)", prop: "elecFee" },
+        { label: "服务费(元)", prop: "serviceFee" },
+        { label: "订单总金额(元)", prop: "totalMoney" },
+        { label: "可用率(%)", prop: "availableRate" },
+      ];
+      exportToCSV(columns, this.tableData, "电站统计", {
+        pageName: "电站维度统计",
+      });
+    },
     handleExport() {
-      alert("导出功能");
+      this.showDownloadCenter = true;
     },
     handleMobile() {
       alert("请使用手机扫描二维码访问移动端");
     },
     handleGo(msg) {
       alert(msg);
+    },
+    goDashboard() {
+      this.$router.push("/dashboard");
     },
   },
 };
@@ -823,5 +854,298 @@ export default {
 }
 .page-footer > * + * {
   margin-left: 40px;
+}
+
+/* ------------------------------
+   响应式自适应
+------------------------------ */
+@media (max-width: 1400px) {
+  .filter-item .el-input,
+  .filter-item .el-select,
+  .filter-item .el-date-editor {
+    width: 140px !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  .top-tabs {
+    padding: 0 16px;
+    height: auto;
+    min-height: 50px;
+    flex-wrap: wrap;
+    align-content: flex-start;
+  }
+  .tab-item {
+    padding: 0 16px;
+    height: 50px;
+    line-height: 50px;
+  }
+  .tab-item.active::after {
+    left: 16px;
+    right: 16px;
+  }
+  .top-right-actions {
+    width: 100%;
+    margin-left: 0;
+    padding: 8px 0 12px;
+    justify-content: flex-end;
+    border-top: 1px solid #f0f1f3;
+  }
+  .breadcrumb,
+  .warn-tip-bar,
+  .filter-card,
+  .table-card {
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+  .breadcrumb {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .filter-card {
+    padding: 16px 16px 4px;
+  }
+  .table-card {
+    padding: 14px 16px 16px;
+  }
+  .page-footer {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 992px) {
+  .top-tabs {
+    padding: 0 12px;
+  }
+  .tab-item {
+    padding: 0 12px;
+    font-size: 13px;
+  }
+  .tab-item.active::after {
+    left: 12px;
+    right: 12px;
+  }
+  .top-right-actions > * + * {
+    margin-left: 8px;
+  }
+  .action-btn,
+  .overview-btn,
+  .export-simple-btn {
+    padding: 0 12px;
+    font-size: 12px;
+    height: 32px;
+  }
+  .breadcrumb,
+  .warn-tip-bar,
+  .filter-card,
+  .table-card {
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+  .filter-card {
+    padding: 14px 14px 2px;
+  }
+  .filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filter-row > * + * {
+    margin-left: 0;
+  }
+  .filter-item {
+    width: 100%;
+    justify-content: flex-start;
+    margin-bottom: 10px;
+  }
+  .filter-label {
+    min-width: 100px;
+    flex-shrink: 0;
+  }
+  .filter-item .el-input,
+  .filter-item .el-select,
+  .filter-item .el-date-editor {
+    flex: 1;
+    width: auto !important;
+    min-width: 0;
+  }
+  .filter-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-left: 0;
+  }
+  .more-row {
+    margin-top: 6px;
+  }
+  .table-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .table-tools {
+    display: flex;
+    justify-content: flex-end;
+  }
+  .table-card {
+    padding: 12px 12px 14px;
+    overflow-x: auto;
+  }
+  .el-table {
+    min-width: 900px;
+  }
+  .pagination-bar {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .top-tabs {
+    padding: 0 10px;
+    position: static;
+  }
+  .tab-item {
+    padding: 0 10px;
+    font-size: 13px;
+    height: 46px;
+    line-height: 46px;
+  }
+  .tab-item.active::after {
+    left: 10px;
+    right: 10px;
+  }
+  .top-right-actions {
+    justify-content: space-between;
+    padding: 8px 0;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .user-info {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+    background: #f5f7fa;
+  }
+  .breadcrumb,
+  .warn-tip-bar,
+  .filter-card,
+  .table-card {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+  .breadcrumb {
+    padding: 12px 10px 4px;
+    font-size: 11px;
+  }
+  .warn-tip-bar {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  .filter-card {
+    padding: 12px 12px 0;
+  }
+  .filter-item {
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .filter-label {
+    min-width: 80px;
+    margin-bottom: 4px;
+  }
+  .filter-item .el-input,
+  .filter-item .el-select,
+  .filter-item .el-date-editor {
+    width: 100% !important;
+  }
+  .filter-sep {
+    margin: 0 6px;
+  }
+  .filter-actions {
+    justify-content: stretch;
+  }
+  .filter-actions .el-button {
+    flex: 1;
+  }
+  .table-card {
+    padding: 10px 8px 12px;
+  }
+  .table-header {
+    padding: 8px 10px;
+    margin-bottom: 10px;
+  }
+  .table-title {
+    font-size: 14px;
+  }
+  .el-table {
+    min-width: 1000px;
+  }
+  .pagination-bar {
+    gap: 6px;
+    font-size: 12px;
+    padding-top: 12px;
+  }
+  .pagination-bar > * + * {
+    margin-left: 4px;
+  }
+  .page-btn,
+  .page-num {
+    min-width: 28px;
+    height: 28px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+  .page-num {
+    padding: 0 6px;
+  }
+  .page-footer {
+    margin-top: 24px;
+    padding: 14px 10px;
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+  .page-footer > * + * {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 576px) {
+  .top-tabs {
+    padding: 0 8px;
+  }
+  .tab-item {
+    padding: 0 8px;
+    font-size: 12px;
+  }
+  .action-btn,
+  .overview-btn,
+  .export-simple-btn {
+    padding: 0 10px;
+    font-size: 12px;
+    height: 30px;
+    gap: 4px;
+  }
+  .breadcrumb,
+  .warn-tip-bar,
+  .filter-card,
+  .table-card {
+    margin-left: 8px;
+    margin-right: 8px;
+  }
+  .filter-label {
+    min-width: 72px;
+    font-size: 12px;
+  }
+  .pagination-bar {
+    font-size: 11px;
+  }
+  .jump-text,
+  .total-text,
+  .size-text {
+    font-size: 11px;
+  }
+}
+.el-button {
+  padding: 7px 20px;
+  font-size: 14px;
+  border-radius: 18px;
 }
 </style>

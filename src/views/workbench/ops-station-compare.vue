@@ -53,7 +53,10 @@
           <i class="el-icon-data-analysis"></i>
           平台规则
         </button>
-        <button class="action-btn download-btn" @click="handleExport">
+        <button
+          class="action-btn download-btn"
+          @click="showDownloadCenter = true"
+        >
           <i class="el-icon-download"></i>
           下载中心
         </button>
@@ -147,7 +150,7 @@
           ></el-tooltip>
         </div>
         <div class="table-tools">
-          <button class="export-simple-btn" @click="handleExport">
+          <button class="export-simple-btn" @click="doExportTable">
             <i class="el-icon-download"></i>导出
           </button>
         </div>
@@ -190,17 +193,24 @@
       ><span>Copyright©2016Co.,Ltd.All Rights Reserved</span
       ><span>版权所有：江苏云快充新能源科技有限公司</span>
     </div>
+
+    <download-center-dialog :visible.sync="showDownloadCenter" />
   </div>
 </template>
 <script>
+import DownloadCenterDialog from "../../components/DownloadCenterDialog.vue";
+import { exportToCSV } from "../../utils/exportCSV";
+
 export default {
   name: "OpsStationCompare",
+  components: { DownloadCenterDialog },
   data() {
     return {
       activeTopTab: "ops-station-compare",
       currentUser: "TXJXGS01",
       dateStart: "2026-08-19",
       dateEnd: "2026-08-19",
+      showDownloadCenter: false,
       filter: { stations: ["1", "2", "4"] },
       stationCols: [
         { key: "s1", name: "同星旭智充电站" },
@@ -290,14 +300,31 @@ export default {
       this.dateEnd = "2026-08-19";
       this.filter = { stations: ["1", "2", "4"] };
     },
+    doExportTable() {
+      const dynamicCols = this.stationCols.map((sc) => ({
+        label: sc.name,
+        prop: sc.key,
+      }));
+      const columns = [
+        { label: "对比指标", prop: "metric" },
+        ...dynamicCols,
+        { label: "差值", prop: "diff" },
+      ];
+      exportToCSV(columns, this.tableData, "站点对比", {
+        pageName: "站点维度对比",
+      });
+    },
     handleExport() {
-      alert("导出功能");
+      this.showDownloadCenter = true;
     },
     handleMobile() {
       alert("请使用手机扫描二维码访问移动端");
     },
     handleGo(msg) {
       alert(msg);
+    },
+    goDashboard() {
+      this.$router.push("/dashboard");
     },
   },
 };
@@ -417,6 +444,11 @@ export default {
   border-color: #4078f5;
   background: rgba(64, 120, 245, 0.06);
   box-shadow: 0 4px 12px rgba(64, 120, 245, 0.12);
+}
+.el-button {
+  padding: 7px 20px;
+  font-size: 14px;
+  border-radius: 18px;
 }
 
 .user-info {

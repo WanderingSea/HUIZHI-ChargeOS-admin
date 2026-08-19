@@ -55,7 +55,10 @@
           <i class="el-icon-data-analysis"></i>
           平台规则
         </button>
-        <button class="action-btn download-btn" @click="handleExport">
+        <button
+          class="action-btn download-btn"
+          @click="showDownloadCenter = true"
+        >
           <i class="el-icon-download"></i>
           下载中心
         </button>
@@ -139,7 +142,7 @@
           </el-tooltip>
         </div>
         <div class="table-tools">
-          <button class="export-simple-btn" @click="handleExport">
+          <button class="export-simple-btn" @click="doExportTable">
             <i class="el-icon-download"></i>导出
           </button>
         </div>
@@ -267,11 +270,17 @@
       <span>Copyright©2016Co.,Ltd.All Rights Reserved</span>
       <span>版权所有：江苏云快充新能源科技有限公司</span>
     </div>
+
+    <download-center-dialog :visible.sync="showDownloadCenter" />
   </div>
 </template>
 <script>
+import DownloadCenterDialog from "../../components/DownloadCenterDialog.vue";
+import { exportToCSV } from "../../utils/exportCSV";
+
 export default {
   name: "OpsPeriod",
+  components: { DownloadCenterDialog },
   data() {
     const today = "2026-08-19";
     return {
@@ -280,6 +289,7 @@ export default {
       dateStart: today,
       dateEnd: today,
       filter: { cycle: "day" },
+      showDownloadCenter: false,
       currentPage: 1,
       pageSize: 10,
       jumpPage: 1,
@@ -381,14 +391,32 @@ export default {
       this.filter = { cycle: "day" };
       this.currentPage = 1;
     },
+    doExportTable() {
+      const columns = [
+        { label: "统计时期", prop: "period" },
+        { label: "电量(度)", prop: "power" },
+        { label: "充电时长(小时)", prop: "chargeHours" },
+        { label: "充电次数(次)", prop: "chargeCount" },
+        { label: "电费原价(元)", prop: "elecFee" },
+        { label: "服务费原价(元)", prop: "serviceFee" },
+        { label: "订单总金额(元)", prop: "totalAmount" },
+        { label: "订单数", prop: "orderCount" },
+      ];
+      exportToCSV(columns, this.tableData, "时期统计", {
+        pageName: "经营时期统计",
+      });
+    },
     handleExport() {
-      alert("导出功能");
+      this.showDownloadCenter = true;
     },
     handleMobile() {
       alert("请使用手机扫描二维码访问移动端");
     },
     handleGo(msg) {
       alert(msg);
+    },
+    goDashboard() {
+      this.$router.push("/dashboard");
     },
   },
 };
@@ -510,7 +538,11 @@ export default {
   background: rgba(64, 120, 245, 0.06);
   box-shadow: 0 4px 12px rgba(64, 120, 245, 0.12);
 }
-
+.el-button {
+  padding: 7px 20px;
+  font-size: 14px;
+  border-radius: 18px;
+}
 .user-info {
   display: flex;
   align-items: center;

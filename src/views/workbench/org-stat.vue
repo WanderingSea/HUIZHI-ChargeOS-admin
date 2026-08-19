@@ -53,7 +53,10 @@
           <i class="el-icon-data-analysis"></i>
           平台规则
         </button>
-        <button class="action-btn download-btn" @click="handleExport">
+        <button
+          class="action-btn download-btn"
+          @click="showDownloadCenter = true"
+        >
           <i class="el-icon-download"></i>
           下载中心
         </button>
@@ -136,7 +139,7 @@
           ></el-tooltip>
         </div>
         <div class="table-tools">
-          <button class="export-simple-btn" @click="handleExport">
+          <button class="export-simple-btn" @click="doExportTable">
             <i class="el-icon-download"></i>导出
           </button>
         </div>
@@ -263,11 +266,17 @@
       ><span>Copyright©2016Co.,Ltd.All Rights Reserved</span
       ><span>版权所有：江苏云快充新能源科技有限公司</span>
     </div>
+
+    <download-center-dialog :visible.sync="showDownloadCenter" />
   </div>
 </template>
 <script>
+import DownloadCenterDialog from "../../components/DownloadCenterDialog.vue";
+import { exportToCSV } from "../../utils/exportCSV";
+
 export default {
   name: "OrgStat",
+  components: { DownloadCenterDialog },
   data() {
     return {
       activeTopTab: "org-stat",
@@ -275,6 +284,7 @@ export default {
       dateStart: "2026-08-19",
       dateEnd: "2026-08-19",
       filter: { name: "" },
+      showDownloadCenter: false,
       currentPage: 1,
       pageSize: 10,
       jumpPage: 1,
@@ -370,14 +380,33 @@ export default {
       this.filter = { name: "" };
       this.currentPage = 1;
     },
+    doExportTable() {
+      const columns = [
+        { label: "机构ID", prop: "id" },
+        { label: "机构名称", prop: "name" },
+        { label: "上级机构", prop: "parent" },
+        { label: "注册用户数", prop: "userCount" },
+        { label: "活跃用户数", prop: "activeUser" },
+        { label: "电量(度)", prop: "power" },
+        { label: "充电次数(次)", prop: "chargeCount" },
+        { label: "订单总金额(元)", prop: "totalAmount" },
+        { label: "机构优惠(元)", prop: "orgDiscount" },
+      ];
+      exportToCSV(columns, this.tableData, "机构统计", {
+        pageName: "机构维度统计",
+      });
+    },
     handleExport() {
-      alert("导出功能");
+      this.showDownloadCenter = true;
     },
     handleMobile() {
       alert("请使用手机扫描二维码访问移动端");
     },
     handleGo(msg) {
       alert(msg);
+    },
+    goDashboard() {
+      this.$router.push("/dashboard");
     },
   },
 };
@@ -578,6 +607,11 @@ export default {
   border: 1px solid #ebeef5;
   border-radius: 4px;
   padding: 18px 20px 6px;
+}
+.el-button {
+  padding: 7px 20px;
+  font-size: 14px;
+  border-radius: 18px;
 }
 .filter-row {
   display: flex;

@@ -56,7 +56,10 @@
           <i class="el-icon-data-analysis"></i>
           平台规则
         </button>
-        <button class="action-btn download-btn" @click="handleExport">
+        <button
+          class="action-btn download-btn"
+          @click="showDownloadCenter = true"
+        >
           <i class="el-icon-download"></i>
           下载中心
         </button>
@@ -205,7 +208,7 @@
           </span>
         </div>
         <div class="table-tools">
-          <button class="export-simple-btn" @click="handleExport">
+          <button class="export-simple-btn" @click="doExportTable">
             <i class="el-icon-download"></i>
             导出
           </button>
@@ -393,14 +396,19 @@
         <el-button type="primary" @click="confirmCustomDate">确定</el-button>
       </span>
     </el-dialog>
+
+    <download-center-dialog :visible.sync="showDownloadCenter" />
   </div>
 </template>
 
 <script>
 import * as echarts from "echarts";
+import DownloadCenterDialog from "../../components/DownloadCenterDialog.vue";
+import { exportToCSV } from "../../utils/exportCSV";
 
 export default {
   name: "WorkbenchOverview",
+  components: { DownloadCenterDialog },
   data() {
     return {
       activeTopTab: "overview",
@@ -410,6 +418,7 @@ export default {
       timeType: "7",
       showCustomDate: false,
       customDateRange: [],
+      showDownloadCenter: false,
       currentPage: 1,
       pageSize: 10,
       jumpPage: 1,
@@ -774,48 +783,26 @@ export default {
       this.customDateRange = [];
       this.$nextTick(() => this.initCharts());
     },
-    handleExport() {
-      const headers = [
-        "电站名称",
-        "ID",
-        "总充电量(度)",
-        "总充电次数",
-        "总充电金额(元)",
-        "服务费(元)",
-        "枪日均",
-        "可用率%",
-        "利用率%",
-        "故障率%",
-        "离线率%",
+    doExportTable() {
+      const columns = [
+        { label: "电站名称", prop: "stationName" },
+        { label: "ID", prop: "id" },
+        { label: "总充电量(度)", prop: "totalPower" },
+        { label: "总充电次数", prop: "totalCount" },
+        { label: "总充电金额(元)", prop: "totalMoney" },
+        { label: "服务费(元)", prop: "serviceFee" },
+        { label: "枪日均电量(度)", prop: "avgGunPower" },
+        { label: "可用率(%)", prop: "availableRate" },
+        { label: "利用率(%)", prop: "useRate" },
+        { label: "故障率(%)", prop: "faultRate" },
+        { label: "离线率(%)", prop: "offlineRate" },
       ];
-      const rows = this.tableData.map((r) => [
-        r.stationName,
-        r.id,
-        r.totalPower,
-        r.totalCount,
-        r.totalMoney,
-        r.serviceFee,
-        r.avgGunPower,
-        r.availableRate,
-        r.useRate,
-        r.faultRate,
-        r.offlineRate,
-      ]);
-      const all = [headers].concat(rows);
-      const csv = all.map((r) => r.join(",")).join("\n");
-      const BOM = "\uFEFF";
-      const blob = new Blob([BOM + csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download =
-        "\u7535\u7ad9\u7ecf\u8425\u6570\u636e_" +
-        new Date().toISOString().slice(0, 10) +
-        ".csv";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      exportToCSV(columns, this.tableData, "电站数据", {
+        pageName: "经营总览-电站数据",
+      });
+    },
+    handleExport() {
+      this.showDownloadCenter = true;
     },
     handleMobile() {
       alert(

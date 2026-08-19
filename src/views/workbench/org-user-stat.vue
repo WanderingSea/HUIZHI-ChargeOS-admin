@@ -53,7 +53,10 @@
           <i class="el-icon-data-analysis"></i>
           平台规则
         </button>
-        <button class="action-btn download-btn" @click="handleExport">
+        <button
+          class="action-btn download-btn"
+          @click="showDownloadCenter = true"
+        >
           <i class="el-icon-download"></i>
           下载中心
         </button>
@@ -97,7 +100,7 @@
             type="date"
             value-format="yyyy-MM-dd"
             size="default"
-            style="width: 160px"
+            style="width: 140px"
           />
           <span class="filter-sep">至</span>
           <el-date-picker
@@ -105,7 +108,7 @@
             type="date"
             value-format="yyyy-MM-dd"
             size="default"
-            style="width: 160px"
+            style="width: 140px"
           />
         </div>
         <div class="filter-item">
@@ -114,7 +117,7 @@
             v-model="filter.userCode"
             placeholder="请输入用户账号"
             size="default"
-            style="width: 200px"
+            style="width: 180px"
             clearable
           />
         </div>
@@ -124,7 +127,7 @@
             v-model="filter.org"
             placeholder="全部机构"
             size="default"
-            style="width: 200px"
+            style="width: 180px"
             clearable
           >
             <el-option label="南京总部机构" value="nj" /><el-option
@@ -151,7 +154,7 @@
           ></el-tooltip>
         </div>
         <div class="table-tools">
-          <button class="export-simple-btn" @click="handleExport">
+          <button class="export-simple-btn" @click="doExportTable">
             <i class="el-icon-download"></i>导出
           </button>
         </div>
@@ -283,11 +286,17 @@
       ><span>Copyright©2016Co.,Ltd.All Rights Reserved</span
       ><span>版权所有：江苏云快充新能源科技有限公司</span>
     </div>
+
+    <download-center-dialog :visible.sync="showDownloadCenter" />
   </div>
 </template>
 <script>
+import DownloadCenterDialog from "../../components/DownloadCenterDialog.vue";
+import { exportToCSV } from "../../utils/exportCSV";
+
 export default {
   name: "OrgUserStat",
+  components: { DownloadCenterDialog },
   data() {
     return {
       activeTopTab: "org-user-stat",
@@ -295,6 +304,7 @@ export default {
       dateStart: "2026-08-19",
       dateEnd: "2026-08-19",
       filter: { userCode: "", org: "" },
+      showDownloadCenter: false,
       currentPage: 1,
       pageSize: 10,
       jumpPage: 1,
@@ -418,8 +428,25 @@ export default {
       this.filter = { userCode: "", org: "" };
       this.currentPage = 1;
     },
+    doExportTable() {
+      const columns = [
+        { label: "用户账号", prop: "userCode" },
+        { label: "用户姓名", prop: "userName" },
+        { label: "所属机构", prop: "orgName" },
+        { label: "手机号", prop: "phone" },
+        { label: "充电次数(次)", prop: "chargeCount" },
+        { label: "电量(度)", prop: "power" },
+        { label: "充电时长(小时)", prop: "chargeHours" },
+        { label: "订单金额(元)", prop: "orderAmount" },
+        { label: "实付金额(元)", prop: "payAmount" },
+        { label: "优惠抵扣(元)", prop: "discount" },
+      ];
+      exportToCSV(columns, this.tableData, "机构用户统计", {
+        pageName: "机构用户统计",
+      });
+    },
     handleExport() {
-      alert("导出功能");
+      this.showDownloadCenter = true;
     },
     handleMobile() {
       alert("请使用手机扫描二维码访问移动端");
@@ -427,10 +454,18 @@ export default {
     handleGo(msg) {
       alert(msg);
     },
+    goDashboard() {
+      this.$router.push("/dashboard");
+    },
   },
 };
 </script>
 <style scoped>
+.el-button {
+  padding: 7px 20px;
+  font-size: 14px;
+  border-radius: 18px;
+}
 .statistics-page {
   min-height: 100vh;
   background: #f4f6f9;
