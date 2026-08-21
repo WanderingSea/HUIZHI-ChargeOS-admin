@@ -1,6 +1,9 @@
 import auth from "@/plugins/auth";
-import router, { constantRoutes, dynamicRoutes } from "@/router";
-import { getRouters } from "@/api/menu";
+import router, {
+  constantRoutes,
+  dynamicRoutes,
+  staticMenuRoutes,
+} from "@/router";
 import Layout from "@/layout/index";
 import ParentView from "@/components/ParentView";
 import InnerLink from "@/layout/components/InnerLink";
@@ -29,31 +32,23 @@ const permission = {
     },
   },
   actions: {
-    // 生成路由
+    // 生成路由（使用前端静态定义的菜单）
     GenerateRoutes({ commit }) {
       return new Promise((resolve) => {
-        // 向后端请求路由数据
-        getRouters().then((res) => {
-          const sdata = JSON.parse(JSON.stringify(res.data));
-          const rdata = JSON.parse(JSON.stringify(res.data));
-          const sidebarRoutes = filterAsyncRouter(sdata);
-          const rewriteRoutes = filterAsyncRouter(rdata, false, true);
-          const asyncRoutes = filterDynamicRoutes(dynamicRoutes);
-          rewriteRoutes.push({ path: "*", redirect: "/404", hidden: true });
-          router.addRoutes(asyncRoutes);
-          // 把前端静态定义的「工作台」放到顶部导航栏第一个
-          const workbenchRoute = constantRoutes.find(
-            (r) => r.path === "/workbench"
-          );
-          const topbarRoutes = workbenchRoute
-            ? [workbenchRoute].concat(sidebarRoutes)
-            : sidebarRoutes;
-          commit("SET_ROUTES", rewriteRoutes);
-          commit("SET_SIDEBAR_ROUTERS", constantRoutes.concat(sidebarRoutes));
-          commit("SET_DEFAULT_ROUTES", sidebarRoutes);
-          commit("SET_TOPBAR_ROUTES", topbarRoutes);
-          resolve(rewriteRoutes);
-        });
+        const sdata = JSON.parse(JSON.stringify(staticMenuRoutes));
+        const rdata = JSON.parse(JSON.stringify(staticMenuRoutes));
+        const sidebarRoutes = filterAsyncRouter(sdata);
+        const rewriteRoutes = filterAsyncRouter(rdata, false, true);
+        const asyncRoutes = filterDynamicRoutes(dynamicRoutes);
+        rewriteRoutes.push({ path: "*", redirect: "/404", hidden: true });
+        router.addRoutes(asyncRoutes);
+
+        const topbarRoutes = sidebarRoutes;
+        commit("SET_ROUTES", rewriteRoutes);
+        commit("SET_SIDEBAR_ROUTERS", constantRoutes.concat(sidebarRoutes));
+        commit("SET_DEFAULT_ROUTES", sidebarRoutes);
+        commit("SET_TOPBAR_ROUTES", topbarRoutes);
+        resolve(rewriteRoutes);
       });
     },
   },
@@ -73,7 +68,7 @@ function filterAsyncRouter(asyncRouterMap, lastRouter = false, type = false) {
         route.component = ParentView;
       } else if (route.component === "InnerLink") {
         route.component = InnerLink;
-      } else {
+      } else if (typeof route.component === "string") {
         route.component = loadView(route.component);
       }
     }
@@ -91,7 +86,7 @@ function filterChildren(childrenMap, lastRouter = false) {
   var children = [];
   childrenMap.forEach((el, index) => {
     if (el.children && el.children.length) {
-      if (el.component === "ParentView" && !lastRouter) {
+      if (el.component === ParentView && !lastRouter) {
         el.children.forEach((c) => {
           c.path = el.path + "/" + c.path;
           if (c.children && c.children.length) {

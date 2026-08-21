@@ -5,6 +5,7 @@ Vue.use(Router);
 
 /* Layout */
 import Layout from "@/layout";
+import ParentView from "@/components/ParentView";
 
 /**
  * Note: 路由配置项
@@ -27,6 +28,8 @@ import Layout from "@/layout";
     activeMenu: '/system/user'      // 当路由设置了该属性，则会高亮相对应的侧边栏。
   }
  */
+
+const Placeholder = () => import("@/views/placeholder/index");
 
 // 公共路由
 export const constantRoutes = [
@@ -62,128 +65,6 @@ export const constantRoutes = [
     hidden: true,
   },
   {
-    path: "/dashboard",
-    name: "Dashboard",
-    component: () => import("@/views/workbench/dashboard"),
-    hidden: true,
-    meta: { title: "充电总览", noCache: true },
-  },
-  {
-    path: "/workbench",
-    component: Layout,
-    redirect: "/workbench/index",
-    meta: { title: "首页", icon: "home" },
-    children: [
-      {
-        path: "index",
-        component: () => import("@/views/workbench/overview"),
-        name: "Workbench",
-        meta: { title: "首页", icon: "home", affix: true },
-      },
-      {
-        path: "ops/period",
-        component: () => import("@/views/workbench/ops-period"),
-        name: "OpsPeriod",
-        hidden: true,
-        meta: { title: "运营商-时期统计", noCache: true },
-      },
-      {
-        path: "ops/hour",
-        component: () => import("@/views/workbench/ops-hour"),
-        name: "OpsHour",
-        hidden: true,
-        meta: { title: "运营商-小时统计", noCache: true },
-      },
-      {
-        path: "ops/operator",
-        component: () => import("@/views/workbench/ops-operator"),
-        name: "OpsOperator",
-        hidden: true,
-        meta: { title: "运营商-运营商统计", noCache: true },
-      },
-      {
-        path: "ops/station",
-        component: () => import("@/views/workbench/ops-station"),
-        name: "OpsStation",
-        hidden: true,
-        meta: { title: "运营商-电站统计", noCache: true },
-      },
-      {
-        path: "ops/terminal",
-        component: () => import("@/views/workbench/ops-terminal"),
-        name: "OpsTerminal",
-        hidden: true,
-        meta: { title: "运营商-终端统计", noCache: true },
-      },
-      {
-        path: "ops/station-compare",
-        component: () => import("@/views/workbench/ops-station-compare"),
-        name: "OpsStationCompare",
-        hidden: true,
-        meta: { title: "运营商-站点对比", noCache: true },
-      },
-      {
-        path: "ops/terminal-compare",
-        component: () => import("@/views/workbench/ops-terminal-compare"),
-        name: "OpsTerminalCompare",
-        hidden: true,
-        meta: { title: "运营商-终端对比", noCache: true },
-      },
-      {
-        path: "org/period",
-        component: () => import("@/views/workbench/org-period"),
-        name: "OrgPeriod",
-        hidden: true,
-        meta: { title: "机构-时期统计", noCache: true },
-      },
-      {
-        path: "org/stat",
-        component: () => import("@/views/workbench/org-stat"),
-        name: "OrgStat",
-        hidden: true,
-        meta: { title: "机构-机构统计", noCache: true },
-      },
-      {
-        path: "org/compare",
-        component: () => import("@/views/workbench/org-compare"),
-        name: "OrgCompare",
-        hidden: true,
-        meta: { title: "机构-机构对比", noCache: true },
-      },
-      {
-        path: "org/user-compare",
-        component: () => import("@/views/workbench/org-user-compare"),
-        name: "OrgUserCompare",
-        hidden: true,
-        meta: { title: "机构-用户对比", noCache: true },
-      },
-      {
-        path: "org/user-stat",
-        component: () => import("@/views/workbench/org-user-stat"),
-        name: "OrgUserStat",
-        hidden: true,
-        meta: { title: "机构-用户统计", noCache: true },
-      },
-    ],
-  },
-  {
-    path: "",
-    component: Layout,
-    redirect: "/workbench/index",
-    children: [
-      {
-        path: "index",
-        component: () => import("@/views/index"),
-        name: "Index",
-        meta: { title: "经营管理", icon: "dashboard", affix: true },
-      },
-    ],
-  },
-  {
-    path: "/",
-    redirect: "/workbench/index",
-  },
-  {
     path: "/user",
     component: Layout,
     hidden: true,
@@ -197,80 +78,505 @@ export const constantRoutes = [
       },
     ],
   },
+  {
+    path: "/",
+    redirect: "/workbench/overview",
+  },
 ];
 
-// 动态路由，基于用户权限动态去加载
-export const dynamicRoutes = [
+// 静态菜单路由（一级目录：顶部导航；二级目录：侧边栏；三级目录：侧边栏下拉）
+export const staticMenuRoutes = [
+  // 1. 工作台
   {
-    path: "/system/user-auth",
+    path: "/workbench",
     component: Layout,
-    hidden: true,
-    permissions: ["system:user:edit"],
+    redirect: "/workbench/overview",
+    meta: { title: "工作台", icon: "home" },
     children: [
       {
-        path: "role/:userId(\\d+)",
-        component: () => import("@/views/system/user/authRole"),
-        name: "AuthRole",
-        meta: { title: "分配角色", activeMenu: "/system/user" },
+        path: "overview",
+        component: () => import("@/views/workbench/overview"),
+        name: "Overview",
+        meta: { title: "首页", icon: "dashboard", affix: true },
+      },
+      {
+        path: "dashboard",
+        component: () => import("@/views/workbench/dashboard"),
+        name: "WorkbenchDashboard",
+        meta: { title: "总览(仪表盘页)", icon: "chart" },
+      },
+      {
+        path: "todo",
+        component: ParentView,
+        name: "Todo",
+        redirect: "/workbench/todo/repair",
+        meta: { title: "待办事项", icon: "list" },
+        alwaysShow: true,
+        children: [
+          {
+            path: "repair",
+            component: Placeholder,
+            name: "TodoRepair",
+            meta: { title: "报修待处理" },
+          },
+          {
+            path: "withdraw",
+            component: Placeholder,
+            name: "TodoWithdraw",
+            meta: { title: "提现待审核" },
+          },
+        ],
+      },
+      {
+        path: "notice",
+        component: Placeholder,
+        name: "WorkbenchNotice",
+        meta: { title: "平台公告", icon: "message" },
       },
     ],
   },
+
+  // 2. 组织与权限
   {
-    path: "/system/role-auth",
+    path: "/org",
     component: Layout,
-    hidden: true,
-    permissions: ["system:role:edit"],
+    redirect: "/org/dept",
+    meta: { title: "组织与权限", icon: "peoples" },
     children: [
       {
-        path: "user/:roleId(\\d+)",
-        component: () => import("@/views/system/role/authUser"),
-        name: "AuthUser",
-        meta: { title: "分配用户", activeMenu: "/system/role" },
+        path: "dept",
+        component: Placeholder,
+        name: "OrgDept",
+        meta: { title: "机构管理", icon: "tree" },
+      },
+      {
+        path: "internal-user",
+        component: Placeholder,
+        name: "InternalUser",
+        meta: { title: "内部用户管理", icon: "user" },
+      },
+      {
+        path: "role",
+        component: Placeholder,
+        name: "OrgRole",
+        meta: { title: "角色权限管理", icon: "lock" },
+      },
+      {
+        path: "operator-user",
+        component: ParentView,
+        name: "OperatorUser",
+        redirect: "/org/operator-user/exclusive",
+        meta: { title: "运营商专属用户", icon: "people" },
+        alwaysShow: true,
+        children: [
+          {
+            path: "exclusive",
+            component: Placeholder,
+            name: "ExclusiveUser",
+            meta: { title: "运营商专属用户列表" },
+          },
+        ],
+      },
+      {
+        path: "platform-user-group",
+        component: Placeholder,
+        name: "PlatformUserGroup",
+        meta: { title: "平台用户分组", icon: "peoples" },
+      },
+      {
+        path: "vehicle",
+        component: Placeholder,
+        name: "OrgVehicle",
+        meta: { title: "车辆管理", icon: "list" },
+      },
+      {
+        path: "operlog",
+        component: Placeholder,
+        name: "OrgOperlog",
+        meta: { title: "操作日志", icon: "log" },
       },
     ],
   },
+
+  // 3. 运维管理
   {
-    path: "/system/dict-data",
+    path: "/ops",
     component: Layout,
-    hidden: true,
-    permissions: ["system:dict:list"],
+    redirect: "/ops/safety-alert",
+    meta: { title: "运维管理", icon: "monitor" },
     children: [
       {
-        path: "index/:dictId(\\d+)",
-        component: () => import("@/views/system/dict/data"),
-        name: "Data",
-        meta: { title: "字典数据", activeMenu: "/system/dict" },
+        path: "safety-alert",
+        component: Placeholder,
+        name: "SafetyAlert",
+        meta: { title: "电桩安全告警", icon: "warning" },
+      },
+      {
+        path: "fault-alert",
+        component: Placeholder,
+        name: "FaultAlert",
+        meta: { title: "电桩故障告警", icon: "bug" },
+      },
+      {
+        path: "vehicle-alert",
+        component: Placeholder,
+        name: "VehicleAlert",
+        meta: { title: "车辆告警", icon: "phone" },
+      },
+      {
+        path: "alert-setting",
+        component: Placeholder,
+        name: "AlertSetting",
+        meta: { title: "告警设置", icon: "edit" },
+      },
+      {
+        path: "repair-order",
+        component: Placeholder,
+        name: "RepairOrder",
+        meta: { title: "保修工单", icon: "form" },
       },
     ],
   },
+
+  // 4. 站场设备管理
   {
-    path: "/tool/gen-edit",
+    path: "/station",
     component: Layout,
-    hidden: true,
-    permissions: ["tool:gen:edit"],
+    redirect: "/station/monitor",
+    meta: { title: "站场设备管理", icon: "server" },
     children: [
       {
-        path: "index/:tableId(\\d+)",
-        component: () => import("@/views/tool/gen/editTable"),
-        name: "GenEdit",
-        meta: { title: "修改生成配置", activeMenu: "/tool/gen" },
+        path: "monitor",
+        component: Placeholder,
+        name: "StationMonitor",
+        meta: { title: "场站监控", icon: "monitor" },
+      },
+      {
+        path: "charge-station",
+        component: Placeholder,
+        name: "ChargeStation",
+        meta: { title: "充电站管理", icon: "list" },
+      },
+      {
+        path: "charge-pile",
+        component: Placeholder,
+        name: "ChargePile",
+        meta: { title: "充电桩管理", icon: "build" },
+      },
+      {
+        path: "charge-gun",
+        component: Placeholder,
+        name: "ChargeGun",
+        meta: { title: "充电枪管理", icon: "tool" },
+      },
+      {
+        path: "price-rate",
+        component: Placeholder,
+        name: "PriceRate",
+        meta: { title: "费率定价管理", icon: "money" },
+      },
+      {
+        path: "station-supervise",
+        component: Placeholder,
+        name: "StationSupervise",
+        meta: { title: "充电站监管信息列表", icon: "chart" },
+      },
+      {
+        path: "pile-supervise",
+        component: Placeholder,
+        name: "PileSupervise",
+        meta: { title: "充电桩监管信息列表", icon: "chart" },
+      },
+      {
+        path: "gun-supervise",
+        component: Placeholder,
+        name: "GunSupervise",
+        meta: { title: "充电枪监管信息列表", icon: "chart" },
       },
     ],
   },
+
+  // 5. 订单管理
   {
-    path: "/monitor/cache-info",
+    path: "/order",
     component: Layout,
-    hidden: true,
-    permissions: ["monitor:cache:list"],
+    redirect: "/order/list",
+    meta: { title: "订单管理", icon: "excel" },
     children: [
       {
-        path: "index",
-        component: () => import("@/views/monitor/cache/cacheInfo"),
-        name: "CacheInfo",
-        meta: { title: "缓存监控详情", activeMenu: "/monitor/cache" },
+        path: "list",
+        component: ParentView,
+        name: "OrderList",
+        redirect: "/order/list/realtime",
+        meta: { title: "订单管理", icon: "excel" },
+        alwaysShow: true,
+        children: [
+          {
+            path: "realtime",
+            component: Placeholder,
+            name: "OrderRealtime",
+            meta: { title: "实时订单" },
+          },
+          {
+            path: "history",
+            component: Placeholder,
+            name: "OrderHistory",
+            meta: { title: "历史订单" },
+          },
+          {
+            path: "abnormal",
+            component: Placeholder,
+            name: "OrderAbnormal",
+            meta: { title: "异常订单" },
+          },
+        ],
+      },
+      {
+        path: "reservation",
+        component: Placeholder,
+        name: "OrderReservation",
+        meta: { title: "预约订单", icon: "date-range" },
+      },
+      {
+        path: "refund",
+        component: Placeholder,
+        name: "OrderRefund",
+        meta: { title: "退款申请处理", icon: "edit" },
       },
     ],
   },
+
+  // 6. 财务管理
+  {
+    path: "/finance",
+    component: Layout,
+    redirect: "/finance/account",
+    meta: { title: "财务管理", icon: "money" },
+    children: [
+      {
+        path: "account",
+        component: Placeholder,
+        name: "FinanceAccount",
+        meta: { title: "账户总览", icon: "dashboard" },
+      },
+      {
+        path: "income-bill",
+        component: Placeholder,
+        name: "IncomeBill",
+        meta: { title: "收入账单管理", icon: "excel" },
+      },
+      {
+        path: "withdraw",
+        component: ParentView,
+        name: "FinanceWithdraw",
+        redirect: "/finance/withdraw/apply",
+        meta: { title: "提现管理", icon: "form" },
+        alwaysShow: true,
+        children: [
+          {
+            path: "apply",
+            component: Placeholder,
+            name: "WithdrawApply",
+            meta: { title: "提现申请" },
+          },
+          {
+            path: "record",
+            component: Placeholder,
+            name: "WithdrawRecord",
+            meta: { title: "提现记录" },
+          },
+        ],
+      },
+      {
+        path: "reconciliation",
+        component: Placeholder,
+        name: "Reconciliation",
+        meta: { title: "对账管理", icon: "chart" },
+      },
+      {
+        path: "invoice",
+        component: Placeholder,
+        name: "FinanceInvoice",
+        meta: { title: "发票管理", icon: "list" },
+      },
+    ],
+  },
+
+  // 7. 客户管理
+  {
+    path: "/customer",
+    component: Layout,
+    redirect: "/customer/car-owner",
+    meta: { title: "客户管理", icon: "user" },
+    children: [
+      {
+        path: "car-owner",
+        component: ParentView,
+        name: "CarOwnerUser",
+        redirect: "/customer/car-owner/exclusive",
+        meta: { title: "车主用户列表", icon: "people" },
+        alwaysShow: true,
+        children: [
+          {
+            path: "exclusive",
+            component: Placeholder,
+            name: "CarOwnerExclusive",
+            meta: { title: "运营商专属用户" },
+          },
+          {
+            path: "public",
+            component: Placeholder,
+            name: "CarOwnerPublic",
+            meta: { title: "平台公共用户" },
+          },
+        ],
+      },
+      {
+        path: "user-group",
+        component: Placeholder,
+        name: "CustomerUserGroup",
+        meta: { title: "用户分组管理", icon: "peoples" },
+      },
+      {
+        path: "blacklist",
+        component: Placeholder,
+        name: "CustomerBlacklist",
+        meta: { title: "黑名单管理", icon: "lock" },
+      },
+      {
+        path: "free-account",
+        component: Placeholder,
+        name: "FreeChargeAccount",
+        meta: { title: "免费充电账号", icon: "money" },
+      },
+      {
+        path: "feedback",
+        component: Placeholder,
+        name: "CustomerFeedback",
+        meta: { title: "用户反馈", icon: "message" },
+      },
+    ],
+  },
+
+  // 8. 数据统计
+  {
+    path: "/statistics",
+    component: Layout,
+    redirect: "/statistics/business",
+    meta: { title: "数据统计", icon: "chart" },
+    children: [
+      {
+        path: "business",
+        component: Placeholder,
+        name: "BusinessOverview",
+        meta: { title: "经营总览", icon: "dashboard" },
+      },
+      {
+        path: "station-charge",
+        component: Placeholder,
+        name: "StationChargeStats",
+        meta: { title: "站场充电统计", icon: "chart" },
+      },
+      {
+        path: "station-run",
+        component: Placeholder,
+        name: "StationRunStats",
+        meta: { title: "站场运行统计", icon: "monitor" },
+      },
+      {
+        path: "device-charge",
+        component: Placeholder,
+        name: "DeviceChargeStats",
+        meta: { title: "设备充电统计", icon: "build" },
+      },
+      {
+        path: "station-asset",
+        component: Placeholder,
+        name: "StationAssetStats",
+        meta: { title: "站场资产统计", icon: "list" },
+      },
+      {
+        path: "device-asset",
+        component: Placeholder,
+        name: "DeviceAssetStats",
+        meta: { title: "设备资产统计", icon: "tool" },
+      },
+    ],
+  },
+
+  // 9. 营销管理
+  {
+    path: "/marketing",
+    component: Layout,
+    redirect: "/marketing/value-added",
+    meta: { title: "营销管理", icon: "shopping" },
+    children: [
+      {
+        path: "value-added",
+        component: Placeholder,
+        name: "ValueAddedService",
+        meta: { title: "增值服务", icon: "star" },
+      },
+    ],
+  },
+
+  // 10. 系统设置
+  {
+    path: "/system",
+    component: Layout,
+    redirect: "/system/account",
+    meta: { title: "系统设置", icon: "system" },
+    children: [
+      {
+        path: "account",
+        component: Placeholder,
+        name: "SystemAccount",
+        meta: { title: "账户中心", icon: "user" },
+      },
+      {
+        path: "sms-log",
+        component: Placeholder,
+        name: "SmsSendLog",
+        meta: { title: "短息发送记录", icon: "message" },
+      },
+      {
+        path: "operlog",
+        component: ParentView,
+        name: "SystemOperlog",
+        redirect: "/system/operlog/login",
+        meta: { title: "操作日志", icon: "log" },
+        alwaysShow: true,
+        children: [
+          {
+            path: "login",
+            component: Placeholder,
+            name: "LoginLog",
+            meta: { title: "登录日志" },
+          },
+          {
+            path: "backend",
+            component: Placeholder,
+            name: "BackendOperlog",
+            meta: { title: "后台操作日志" },
+          },
+        ],
+      },
+      {
+        path: "agreement",
+        component: Placeholder,
+        name: "AgreementManage",
+        meta: { title: "协议管理", icon: "form" },
+      },
+      {
+        path: "issue-feedback",
+        component: Placeholder,
+        name: "IssueFeedback",
+        meta: { title: "问题反馈", icon: "question" },
+      },
+    ],
+  },
+
+  { path: "*", redirect: "/404", hidden: true },
 ];
 
 // 防止连续点击多次路由报错
