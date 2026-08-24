@@ -17,36 +17,6 @@
     <div class="right-menu">
       <template v-if="device !== 'mobile'">
         <search id="header-search" class="right-menu-item" />
-
-        <!--        <screenfull id="screenfull" class="right-menu-item hover-effect" />-->
-
-        <!--        <el-tooltip content="布局大小" effect="dark" placement="bottom">-->
-        <!--          <size-select id="size-select" class="right-menu-item hover-effect" />-->
-        <!--        </el-tooltip>-->
-        <el-tooltip content="源码地址" effect="dark" placement="bottom">
-          <Vctgo-git id="vctgo-git" class="right-menu-item hover-effect" />
-        </el-tooltip>
-
-        <el-tooltip content="个人博客" effect="dark" placement="bottom">
-          <Vctgo-blog id="vctgo-blog" class="right-menu-item hover-effect" />
-        </el-tooltip>
-
-        <el-tooltip content="文档地址" effect="dark" placement="bottom">
-          <Vctgo-doc id="vctgo-doc" class="right-menu-item hover-effect" />
-        </el-tooltip>
-
-        <el-tooltip content="首页" effect="dark" placement="bottom">
-          <router-link
-            to="/workbench/index"
-            id="go-home"
-            class="right-menu-item hover-effect"
-          >
-            <i
-              class="el-icon-s-home"
-              style="font-size: 20px; vertical-align: middle"
-            />
-          </router-link>
-        </el-tooltip>
       </template>
 
       <el-dropdown

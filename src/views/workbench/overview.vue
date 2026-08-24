@@ -77,7 +77,7 @@
               <!-- 点击自定义打开弹窗 -->
               <el-radio-button
                 label="自定义"
-                @click="openDateDialog"
+                @click.native="openDateDialog"
               ></el-radio-button>
             </el-radio-group>
           </div>
@@ -86,30 +86,62 @@
       </div>
     </div>
 
-    <!-- 自定义时间弹窗 -->
     <el-dialog
       title="选择时间范围"
       :visible.sync="dateDialogVisible"
-      width="420px"
+      width="440px"
+      append-to-body
+      :close-on-click-modal="false"
+      custom-class="date-range-dialog"
     >
-      <el-date-picker
-        v-model="customDateRange"
-        type="daterange"
-        range-separator="至"
-        start-placeholder="开始日期"
-        end-placeholder="结束日期"
-        style="width: 100%"
-      ></el-date-picker>
+      <el-form label-width="90px">
+        <el-form-item label="开始日期">
+          <el-date-picker
+            v-model="customStart"
+            type="date"
+            value-format="yyyy-MM-dd"
+            placeholder="开始日期"
+            style="width: 100%"
+            :picker-options="{
+              disabledDate: (t) => customEnd && t > new Date(customEnd),
+            }"
+          >
+          </el-date-picker>
+        </el-form-item>
+        <el-form-item label="结束日期">
+          <el-date-picker
+            v-model="customEnd"
+            type="date"
+            value-format="yyyy-MM-dd"
+            placeholder="结束日期"
+            style="width: 100%"
+            :picker-options="{
+              disabledDate: (t) => customStart && t < new Date(customStart),
+            }"
+          >
+          </el-date-picker>
+        </el-form-item>
+        <el-form-item label="快捷选择">
+          <el-button-group>
+            <el-button size="mini" @click="customQuick(7)">近7天</el-button>
+            <el-button size="mini" @click="customQuick(30)">近30天</el-button>
+            <el-button size="mini" @click="customQuick(90)">近3月</el-button>
+            <el-button size="mini" @click="customYear(1)">近1年</el-button>
+          </el-button-group>
+        </el-form-item>
+      </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dateDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmCustomDate">确定</el-button>
+        <el-button type="primary" @click="confirmCustomDate"
+          >确定并重绘</el-button
+        >
       </div>
     </el-dialog>
   </div>
 </template>
 
 <script>
-import echarts from "echarts";
+import * as echarts from "echarts";
 export default {
   name: "StationOverview",
   data() {
@@ -121,6 +153,9 @@ export default {
       // 弹窗相关
       dateDialogVisible: false,
       customDateRange: [],
+      lastCustomRange: null, // 记住上次自定义的时间段
+      customStart: "",
+      customEnd: "",
 
       chargeData: {
         electric: "3854.1610",
@@ -140,10 +175,49 @@ export default {
       chartRightInstance: null,
     };
   },
+  watch: {
+    rangeSel(v) {
+      if (v === "自定义") return;
+      this.reRenderLeftByRange();
+    },
+    chartStation() {
+      this.reRenderLeftByRange();
+      if (this.chartRightInstance) {
+        // 右图也想刷新的话，就把 initChart 里右图那段抽成 reRenderRightTime() 并在这里调用
+      }
+    },
+  },
   mounted() {
-    this.initChart();
+    this.$nextTick(() => {
+      this.initChart();
+    });
     window.addEventListener("resize", this.handleResize);
   },
+  customQuick(days) {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - days + 1);
+    const pad = (n) => String(n).padStart(2, "0");
+    this.customStart = `${start.getFullYear()}-${pad(
+      start.getMonth() + 1
+    )}-${pad(start.getDate())}`;
+    this.customEnd = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(
+      end.getDate()
+    )}`;
+  },
+  customYear(y) {
+    const end = new Date();
+    const start = new Date();
+    start.setFullYear(end.getFullYear() - y);
+    const pad = (n) => String(n).padStart(2, "0");
+    this.customStart = `${start.getFullYear()}-${pad(
+      start.getMonth() + 1
+    )}-${pad(start.getDate())}`;
+    this.customEnd = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(
+      end.getDate()
+    )}`;
+  },
+
   beforeDestroy() {
     window.removeEventListener("resize", this.handleResize);
     this.chartLeftInstance?.dispose();
@@ -151,19 +225,157 @@ export default {
   },
   methods: {
     openDateDialog() {
+      this.rangeSel = "自定义";
       this.dateDialogVisible = true;
     },
     confirmCustomDate() {
-      if (!this.customDateRange || this.customDateRange.length !== 2) {
-        this.$message.warning("请选择起止时间");
+      if (!this.customStart || !this.customEnd) {
+        this.$message.warning("请选择完整起止时间");
         return;
       }
+      if (new Date(this.customStart) > new Date(this.customEnd)) {
+        this.$message.warning("开始日期不能晚于结束日期");
+        return;
+      }
+      this.lastCustomRange = [this.customStart, this.customEnd];
       this.dateDialogVisible = false;
-      // 拿到选中的时间：this.customDateRange[0] 开始时间，this.customDateRange[1]结束时间
-      console.log("自定义时间", this.customDateRange);
-      // 这里写axios请求，把时间传给后端，拿到新数据后再调用 this.initChart() 刷新图表
-      this.$message.success(
-        `已选择：${this.customDateRange[0]} 至 ${this.customDateRange[1]}`
+      // 选中后立刻用新数据重绘左图（根据自定义日期生成 X 轴）
+      this.reRenderLeftByRange();
+      this.$message.success(`已应用：${this.customStart} 至 ${this.customEnd}`);
+    },
+
+    // ===== 新增：根据 rangeSel 决定 X 轴，然后重绘左图 =====
+    reRenderLeftByRange() {
+      if (!this.chartLeftInstance) return;
+      const pad = (n) => String(n).padStart(2, "0");
+      const fmtDay = (d) =>
+        `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      const fmtMonth = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+      let xData = [];
+
+      if (this.rangeSel === "近30天") {
+        const today = new Date();
+        for (let i = 29; i >= 0; i--) {
+          const d = new Date(today);
+          d.setDate(today.getDate() - i);
+          xData.push(fmtDay(d));
+        }
+      } else if (this.rangeSel === "近12月") {
+        const now = new Date();
+        for (let i = 11; i >= 0; i--) {
+          xData.push(
+            fmtMonth(new Date(now.getFullYear(), now.getMonth() - i, 1))
+          );
+        }
+      } else if (this.rangeSel === "自定义" && this.lastCustomRange) {
+        const [s, e] = this.lastCustomRange;
+        const start = new Date(s),
+          end = new Date(e);
+        const diffDays = Math.max(1, Math.round((end - start) / 86400000) + 1);
+        if (diffDays > 100) {
+          // 大于 100 天按月粒度
+          for (let y = start.getFullYear(); y <= end.getFullYear(); y++) {
+            const ms = y === start.getFullYear() ? start.getMonth() : 0;
+            const me = y === end.getFullYear() ? end.getMonth() : 11;
+            for (let m = ms; m <= me; m++)
+              xData.push(fmtMonth(new Date(y, m, 1)));
+          }
+        } else {
+          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            xData.push(fmtDay(new Date(d)));
+          }
+        }
+      }
+
+      const mul = this.chartStation === "all" ? 1 : 0.6;
+      const rand = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+      const electric = xData.map(() => rand(1800, 5000) * mul);
+      const counts = xData.map(() => rand(20, 60));
+      const amounts = xData.map((_, i) => Math.round(electric[i] * 0.62));
+
+      this.chartLeftInstance.setOption(
+        {
+          color: ["#73c990", "#e6a445", "#4972dd"],
+          tooltip: { trigger: "axis", axisPointer: { type: "cross" } },
+          legend: {
+            data: ["充电电量(度)", "充电次数(单)", "订单金额(元)"],
+            right: 10,
+            top: 4,
+          },
+          grid: {
+            left: "3%",
+            right: "4%",
+            bottom: 60,
+            top: 48,
+            containLabel: true,
+          },
+          xAxis: {
+            type: "category",
+            boundaryGap: false,
+            data: xData,
+            axisLabel: {
+              rotate: xData.length > 15 ? 30 : 0,
+              fontSize: 11,
+              color: "#666",
+              hideOverlap: true,
+            },
+          },
+          yAxis: [
+            {
+              type: "value",
+              name: "电量/金额",
+              splitLine: { lineStyle: { type: "dashed", color: "#eee" } },
+            },
+            { type: "value", name: "次数", splitLine: { show: false } },
+          ],
+          dataZoom:
+            xData.length > 14
+              ? [
+                  { type: "inside", start: 0, end: 100 },
+                  {
+                    type: "slider",
+                    height: 16,
+                    bottom: 10,
+                    start: 0,
+                    end: 100,
+                  },
+                ]
+              : undefined,
+          series: [
+            {
+              name: "充电电量(度)",
+              type: "line",
+              smooth: true,
+              showSymbol: false,
+              lineStyle: { width: 2.6 },
+              areaStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                  { offset: 0, color: "rgba(115,201,144,0.45)" },
+                  { offset: 1, color: "rgba(115,201,144,0.04)" },
+                ]),
+              },
+              data: electric,
+            },
+            {
+              name: "订单金额(元)",
+              type: "line",
+              smooth: true,
+              showSymbol: false,
+              lineStyle: { width: 2.4 },
+              data: amounts,
+            },
+            {
+              name: "充电次数(单)",
+              type: "line",
+              yAxisIndex: 1,
+              smooth: true,
+              showSymbol: false,
+              lineStyle: { width: 2, type: "dashed" },
+              data: counts,
+            },
+          ],
+        },
+        true
       );
     },
     initChart() {
@@ -174,7 +386,7 @@ export default {
       this.chartLeftInstance.setOption({
         tooltip: { trigger: "axis" },
         legend: { data: ["充电电量", "充电次数", "订单金额"], right: 10 },
-        grid: { left: "3%", right: "4%", bottom: "12%" },
+        grid: { left: "3%", right: "4%", bottom: "12%", containLabel: true },
         xAxis: {
           type: "category",
           boundaryGap: false,
@@ -273,102 +485,191 @@ export default {
 <style scoped>
 .container {
   max-width: 100%;
-  padding: 24px;
-  background-color: #f7f8fa;
+  padding: 20px 24px;
+  background-color: #f5f7fa;
+  box-sizing: border-box;
 }
+
 .block-card {
   background: #ffffff;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 16px;
-  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  padding: 22px 24px;
+  margin-bottom: 18px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f0f2f5;
 }
+
 .block-title-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
+
 .block-title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: #1f2937;
 }
+
 .top-select-group {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
 }
+
+/* 数据卡片 */
 .data-card-wrap {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
+  gap: 14px;
 }
+
 .data-card-item {
-  border-radius: 10px;
-  padding: 20px 16px;
+  border-radius: 12px;
+  padding: 22px 18px;
   color: #fff;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
 }
+.data-card-item::after {
+  content: "";
+  position: absolute;
+  right: -20px;
+  top: -30px;
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+}
+
 .card-green {
-  background: #70bd63;
+  background: linear-gradient(135deg, #68c478 0%, #4fb862 100%);
 }
 .card-orange {
-  background: #f2b040;
+  background: linear-gradient(135deg, #f7bc4e 0%, #f0a230 100%);
 }
 .card-blue1 {
-  background: #57a8e8;
+  background: linear-gradient(135deg, #63b4ee 0%, #4398d8 100%);
 }
 .card-purple {
-  background: #8478e8;
+  background: linear-gradient(135deg, #9387f0 0%, #7466e2 100%);
 }
 .card-blue2 {
-  background: #497cdb;
+  background: linear-gradient(135deg, #598be8 0%, #3b68d0 100%);
 }
+
 .data-label {
   font-size: 13px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  opacity: 0.92;
 }
 .data-value {
-  font-size: 34px;
-  font-weight: bold;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.1;
+  word-break: break-all;
 }
+
+/* 实时状态行 */
 .status-row {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
+  gap: 14px;
 }
 .status-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  padding: 12px 10px;
+  background-color: #f8fafc;
+  border-radius: 10px;
 }
 .status-icon-box {
-  font-size: 28px;
+  font-size: 30px;
 }
 .status-text small {
-  color: #888;
+  color: #6b7280;
   font-size: 13px;
+  display: block;
+  margin-bottom: 4px;
 }
 .status-text .num {
-  font-size: 24px;
-  font-weight: bold;
-  color: #333;
+  font-size: 26px;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1;
 }
+
+/* 图表区域 */
 .chart-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 18px;
 }
 .chart-card {
   background: #fff;
-  border-radius: 12px;
-  padding: 18px;
-  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  padding: 20px 22px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f0f2f5;
 }
 .chart-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* 弹窗自定义样式 */
+:deep(.date-range-dialog .el-dialog__body) {
+  padding-top: 10px;
+}
+:deep(.date-range-dialog .el-form-item) {
+  margin-bottom: 18px;
+}
+
+/* 响应式适配 */
+@media screen and (max-width: 1400px) {
+  .data-card-wrap {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .status-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media screen and (max-width: 992px) {
+  .chart-row {
+    grid-template-columns: 1fr;
+  }
+  .data-card-wrap {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .status-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media screen and (max-width: 640px) {
+  .container {
+    padding: 12px;
+  }
+  .block-card {
+    padding: 16px;
+  }
+  .data-card-wrap {
+    grid-template-columns: 1fr;
+  }
+  .status-row {
+    grid-template-columns: 1fr;
+  }
+  .data-value {
+    font-size: 26px;
+  }
 }
 </style>

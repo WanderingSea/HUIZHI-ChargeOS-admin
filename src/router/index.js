@@ -30,7 +30,7 @@ import ParentView from "@/components/ParentView";
  */
 
 const Placeholder = () => import("@/views/placeholder/index");
-
+export const dynamicRoutes = [];
 // 公共路由
 export const constantRoutes = [
   {
@@ -82,11 +82,18 @@ export const constantRoutes = [
     path: "/",
     redirect: "/workbench/overview",
   },
+  {
+    path: "/workbench/dashboard",
+    component: () => import("@/views/workbench/dashboard"),
+    name: "FullDashboard",
+    meta: { title: "总览", icon: "chart" },
+    hidden: true,
+  },
 ];
 
-// 静态菜单路由（一级目录：顶部导航；二级目录：侧边栏；三级目录：侧边栏下拉）
+// 菜单路由
 export const staticMenuRoutes = [
-  // 1. 工作台
+  // 工作台
   {
     path: "/workbench",
     component: Layout,
@@ -100,10 +107,9 @@ export const staticMenuRoutes = [
         meta: { title: "首页", icon: "dashboard", affix: true },
       },
       {
-        path: "dashboard",
-        component: () => import("@/views/workbench/dashboard"),
-        name: "WorkbenchDashboard",
-        meta: { title: "总览(仪表盘页)", icon: "chart" },
+        path: "dashboard-redirect",
+        redirect: "/workbench/dashboard",
+        meta: { title: "总览", icon: "chart" },
       },
       {
         path: "todo",
@@ -136,7 +142,7 @@ export const staticMenuRoutes = [
     ],
   },
 
-  // 2. 组织与权限
+  //  组织与权限
   {
     path: "/org",
     component: Layout,
@@ -198,7 +204,7 @@ export const staticMenuRoutes = [
     ],
   },
 
-  // 3. 运维管理
+  // 运维管理
   {
     path: "/ops",
     component: Layout,
@@ -238,7 +244,7 @@ export const staticMenuRoutes = [
     ],
   },
 
-  // 4. 站场设备管理
+  // 站场设备管理
   {
     path: "/station",
     component: Layout,
@@ -296,7 +302,7 @@ export const staticMenuRoutes = [
     ],
   },
 
-  // 5. 订单管理
+  // 订单管理
   {
     path: "/order",
     component: Layout,
@@ -346,7 +352,7 @@ export const staticMenuRoutes = [
     ],
   },
 
-  // 6. 财务管理
+  // 财务管理
   {
     path: "/finance",
     component: Layout,
@@ -402,7 +408,7 @@ export const staticMenuRoutes = [
     ],
   },
 
-  // 7. 客户管理
+  //  客户管理
   {
     path: "/customer",
     component: Layout,
@@ -458,7 +464,7 @@ export const staticMenuRoutes = [
     ],
   },
 
-  // 8. 数据统计
+  // 数据统计
   {
     path: "/statistics",
     component: Layout,
@@ -504,7 +510,7 @@ export const staticMenuRoutes = [
     ],
   },
 
-  // 9. 营销管理
+  // 营销管理
   {
     path: "/marketing",
     component: Layout,
@@ -520,7 +526,7 @@ export const staticMenuRoutes = [
     ],
   },
 
-  // 10. 系统设置
+  // 系统设置
   {
     path: "/system",
     component: Layout,

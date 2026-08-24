@@ -1,5 +1,16 @@
 <template>
   <div class="charge-overview">
+    <!-- 返回按钮 -->
+    <div class="page-topbar">
+      <el-button
+        class="back-btn"
+        icon="el-icon-arrow-left"
+        size="medium"
+        @click="goBack"
+        >返回首页</el-button
+      >
+    </div>
+
     <div class="page-title">
       <span>充 电 总 览</span>
     </div>
@@ -303,6 +314,8 @@ export default {
     if (this.amap) {
       this.stationMarkerList.forEach((mk) => this.amap.remove(mk));
       this.amap.destroy();
+      this.stationMarkerList = [];
+      this.amap = null;
     }
   },
   methods: {
@@ -315,6 +328,15 @@ export default {
       if (this.gaugeChart2) this.gaugeChart2.resize();
       if (this.gaugeChart3) this.gaugeChart3.resize();
       if (this.amap) this.amap.resize();
+    },
+    // 返回按钮逻辑
+    goBack() {
+      // 有历史记录就回退，没有则跳转到工作台首页，按你实际路由修改路径
+      if (window.history.length > 1) {
+        this.$router.back();
+      } else {
+        this.$router.push("/workbench/overview");
+      }
     },
     initAmap() {
       if (!window.AMap) {
@@ -440,21 +462,21 @@ export default {
 .charge-overview {
   width: 100%;
   min-height: 100vh;
-  background: #050b1f;
+  background: #060d22;
   background-image: radial-gradient(
       circle at 20% 30%,
-      rgba(30, 60, 120, 0.3) 0%,
-      transparent 50%
+      rgba(34, 70, 138, 0.22) 0%,
+      transparent 52%
     ),
     radial-gradient(
       circle at 80% 70%,
-      rgba(30, 60, 120, 0.2) 0%,
-      transparent 50%
+      rgba(32, 66, 130, 0.16) 0%,
+      transparent 52%
     );
-  padding: 20px 30px 50px;
+  padding: 20px 28px 40px;
   box-sizing: border-box;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 .charge-overview::before {
@@ -465,66 +487,93 @@ export default {
   right: 0;
   bottom: 0;
   background-image: radial-gradient(
-    rgba(64, 158, 255, 0.08) 1px,
+    rgba(64, 158, 255, 0.05) 1px,
     transparent 1px
   );
-  background-size: 30px 30px;
+  background-size: 32px 32px;
   pointer-events: none;
+  z-index: 0;
 }
 
+/* 返回按钮 */
+.page-topbar {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 22px;
+}
+.back-btn {
+  background: linear-gradient(90deg, #29c7ff, #409eff) !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 500;
+  box-shadow: 0 3px 12px rgba(64, 158, 255, 0.28);
+  transition: all 0.22s ease;
+}
+.back-btn:hover {
+  transform: translateX(-3px);
+  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.4);
+}
+
+/* 页面大标题 */
 .page-title {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 32px;
   position: relative;
   z-index: 1;
 }
-
 .page-title span {
   display: inline-block;
-  font-size: 40px;
-  font-weight: bold;
-  color: #fff;
-  letter-spacing: 12px;
-  padding: 15px 120px 25px 132px;
-  background: rgba(64, 158, 255, 0.12);
-  clip-path: polygon(10% 0, 90% 0, 100% 100%, 0% 100%);
-  text-shadow: 0 0 20px rgba(64, 158, 255, 0.5);
+  font-size: 36px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 10px;
+  padding: 14px 100px 20px;
+  background: rgba(64, 158, 255, 0.1);
+  clip-path: polygon(8% 0, 92% 0, 100% 100%, 0% 100%);
+  text-shadow: 0 0 12px rgba(64, 158, 255, 0.35);
 }
 
 .card-row {
   display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
+  gap: 18px;
+  margin-bottom: 18px;
   position: relative;
   z-index: 1;
 }
-
 .card-row-4 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 18px;
 }
 
+/* 顶部统计卡片 */
 .stat-card {
-  background: rgba(22, 42, 92, 0.55);
-  border: 1px solid rgba(64, 158, 255, 0.3);
-  border-radius: 4px;
-  padding: 20px;
+  background: rgba(20, 40, 86, 0.52);
+  border: 1px solid rgba(64, 158, 255, 0.22);
+  border-radius: 12px;
+  padding: 22px 20px;
   display: flex;
   align-items: center;
   box-sizing: border-box;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(41, 199, 255, 0.12);
+  border-color: rgba(64, 158, 255, 0.35);
 }
 
 .stat-icon {
-  width: 64px;
-  height: 64px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 18px;
+  margin-right: 16px;
   flex-shrink: 0;
 }
-
 .icon-blue {
   background: radial-gradient(circle, #3a7bd5 0%, #1e4f9e 100%);
 }
@@ -540,314 +589,295 @@ export default {
 
 .stat-content {
   flex: 1;
+  min-width: 0;
 }
-
 .stat-label {
-  font-size: 15px;
-  color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 12px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.76);
+  margin-bottom: 10px;
 }
-
 .stat-value {
-  font-size: 30px;
-  font-weight: bold;
+  font-size: 28px;
+  font-weight: 700;
   color: #fff;
-  font-family: Arial, sans-serif;
-  letter-spacing: 1px;
+  font-family: "Arial", sans‑serif;
+  letter-spacing: 0.5px;
+  word-break: break‑all;
 }
 
+/* 中层三块面板 */
 .panel-left,
 .middle-panel,
 .right-panel {
-  background: rgba(14, 32, 68, 0.65);
-  border: 1px solid rgba(64, 158, 255, 0.25);
-  border-radius: 4px;
+  background: rgba(16, 34, 72, 0.6);
+  border: 1px solid rgba(64, 158, 255, 0.22);
+  border-radius: 12px;
   padding: 20px;
   box-sizing: border-box;
 }
-
 .panel-left {
-  flex: 1;
+  flex: 1.2;
   display: flex;
   align-items: center;
+}
+.middle-panel {
+  flex: 1;
+}
+.right-panel {
+  flex: 0.75;
 }
 
 .today-item {
   flex: 1;
   display: flex;
   align-items: center;
-  padding: 10px 20px;
+  padding: 8px 12px;
 }
-
 .today-icon {
-  width: 72px;
-  height: 72px;
-  border-radius: 8px;
-  background: rgba(64, 158, 255, 0.1);
+  width: 68px;
+  height: 68px;
+  border-radius: 10px;
+  background: rgba(64, 158, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 16px;
+  margin-right: 14px;
   flex-shrink: 0;
   border: 1px solid rgba(64, 158, 255, 0.2);
 }
-
 .today-info {
   flex: 1;
+  min-width: 0;
 }
-
 .today-label {
-  font-size: 16px;
-  color: rgba(255, 255, 255, 0.85);
-  margin-bottom: 15px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 10px;
 }
-
 .today-value {
-  font-size: 36px;
-  font-weight: bold;
+  font-size: 32px;
+  font-weight: 700;
   color: #fff;
-  font-family: Arial, sans-serif;
+  font-family: "Arial", sans‑serif;
+  word-break: break‑all;
 }
-
 .today-divider {
   width: 1px;
-  height: 80px;
+  height: 84px;
   background: linear-gradient(
     180deg,
     transparent,
-    rgba(64, 158, 255, 0.4),
+    rgba(64, 158, 255, 0.32),
     transparent
   );
   flex-shrink: 0;
+  margin: 0 10px;
 }
 
-.middle-panel {
-  width: 28%;
-}
-
-.right-panel {
-  width: 22%;
-}
-
+/* 面板标题 */
 .panel-title {
   display: flex;
   align-items: center;
   margin-bottom: 18px;
 }
-
 .title-tag {
   display: inline-block;
   background: linear-gradient(90deg, #29c7ff, #409eff);
   color: #fff;
   padding: 4px 14px;
   font-size: 13px;
-  border-radius: 2px;
+  border-radius: 4px;
   position: relative;
   z-index: 1;
 }
-
 .title-tag.tag-purple {
   background: linear-gradient(90deg, #8b5cf6, #a862ff);
 }
-
 .title-tag.tag-small {
   font-size: 12px;
   padding: 3px 12px;
   background: linear-gradient(90deg, #409eff, #5a9df5);
 }
-
 .title-line {
   flex: 1;
   height: 1px;
-  background: rgba(64, 158, 255, 0.25);
-  margin-left: 8px;
+  background: rgba(64, 158, 255, 0.22);
+  margin-left: 10px;
 }
 
+/* 仪表盘 */
 .gauge-row {
   display: flex;
-  justify-content: space-around;
+  justify-content: space‑around;
   align-items: center;
 }
-
 .gauge-item {
   width: 33.33%;
 }
-
 .gauge-chart {
   width: 100%;
-  height: 140px;
+  height: 145px;
 }
 
+/* 节能减排模块 */
 .energy-item {
   display: flex;
-  justify-content: space-between;
+  justify-content: space‑between;
   align-items: center;
   padding: 14px 0;
-  border-bottom: 1px dashed rgba(64, 158, 255, 0.15);
+  border-bottom: 1px dashed rgba(64, 158, 255, 0.14);
 }
-
 .energy-item:last-child {
   border-bottom: none;
 }
-
 .energy-label {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.74);
 }
-
 .energy-value {
-  font-size: 22px;
-  font-weight: bold;
+  font-size: 20px;
+  font-weight: 700;
   color: #fff;
-  font-family: Arial, sans-serif;
+  font-family: "Arial", sans‑serif;
 }
-
 .energy-unit {
   font-size: 13px;
   font-weight: normal;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.58);
   margin-left: 4px;
 }
 
+/* 昨日汇总面板 */
 .yesterday-panel {
   flex: 1;
-  background: rgba(14, 32, 68, 0.65);
-  border: 1px solid rgba(64, 158, 255, 0.25);
-  border-radius: 4px;
+  background: rgba(16, 34, 72, 0.6);
+  border: 1px solid rgba(64, 158, 255, 0.22);
+  border-radius: 12px;
   padding: 20px;
-  box-sizing: border-box;
+  box-sizing: border‑box;
 }
-
 .yesterday-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
-  margin-bottom: 25px;
+  gap: 14px;
+  margin-bottom: 22px;
 }
-
 .yesterday-item {
-  background: rgba(64, 158, 255, 0.05);
+  background: rgba(64, 158, 255, 0.06);
   border-left: 3px solid #409eff;
-  padding: 12px 15px;
+  padding: 14px 16px;
+  border-radius: 6px;
 }
-
 .yesterday-label {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 10px;
-}
-
-.yesterday-value {
-  font-size: 22px;
-  font-weight: bold;
-  color: #fff;
-  font-family: Arial, sans-serif;
   margin-bottom: 8px;
 }
-
+.yesterday-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  font-family: "Arial", sans‑serif;
+  margin-bottom: 8px;
+  word-break: break‑all;
+}
 .yesterday-rate {
   font-size: 12px;
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
 }
-
-.rate-up {
+.rate‑up {
   color: #ff6b6b;
 }
-
-.rank-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.rate‑down {
+  color: #4cd964;
 }
 
+/* 排名列表 */
+.rank-list {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+}
 .rank-item {
   display: flex;
   align-items: center;
-  background: rgba(26, 44, 84, 0.4);
-  padding: 14px 20px;
-  clip-path: polygon(0 0, 98% 0, 100% 50%, 98% 100%, 0 100%, 2% 50%);
+  background: rgba(24, 44, 84, 0.45);
+  padding: 14px 18px;
+  border-radius: 8px;
 }
-
 .rank-no {
-  width: 80px;
-  font-size: 18px;
-  font-weight: bold;
+  min-width: 72px;
+  font-size: 16px;
+  font-weight: 700;
   color: #fff;
-  padding: 4px 12px;
+  padding: 4px 10px;
   text-align: center;
-  margin-right: 20px;
-  clip-path: polygon(0 0, 85% 0, 100% 100%, 15% 100%);
+  margin-right: 16px;
+  border-radius: 4px;
 }
-
 .rank-1 .rank-no {
-  background: linear-gradient(90deg, #f5a623, #f7b84e);
+  background: linear-gradient(90deg, #e6a020, #f2b448);
 }
-
 .rank-2 .rank-no {
-  background: linear-gradient(90deg, #8a94a6, #a8b0bc);
+  background: linear-gradient(90deg, #788498, #949fb0);
 }
-
 .rank-name {
   flex: 1;
-  font-size: 16px;
+  font-size: 15px;
   color: #fff;
 }
-
 .rank-value {
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 17px;
+  font-weight: 700;
   color: #409eff;
-  font-family: Arial, sans-serif;
+  font-family: "Arial", sans‑serif;
 }
 
+/* 地图面板 */
 .map-panel {
-  width: 45%;
-  background: rgba(14, 32, 68, 0.65);
-  border: 1px solid rgba(64, 158, 255, 0.25);
-  border-radius: 4px;
+  flex: 0.95;
+  background: rgba(16, 34, 72, 0.6);
+  border: 1px solid rgba(64, 158, 255, 0.22);
+  border-radius: 12px;
   position: relative;
   overflow: hidden;
 }
-
 .map-stats {
   position: absolute;
-  top: 15px;
-  left: 15px;
+  top: 14px;
+  left: 14px;
   z-index: 10;
   display: flex;
-  gap: 15px;
+  gap: 12px;
 }
-
 .map-stat-item {
-  background: rgba(15, 35, 75, 0.85);
-  border: 1px solid rgba(64, 158, 255, 0.3);
-  padding: 8px 20px;
+  background: rgba(14, 32, 66, 0.86);
+  border: 1px solid rgba(64, 158, 255, 0.28);
+  padding: 8px 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  border-radius: 8px;
 }
-
 .map-stat-label {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
-
 .map-stat-value {
-  font-size: 26px;
-  font-weight: bold;
+  font-size: 24px;
+  font-weight: 700;
   color: #fff;
-  font-family: Arial, sans-serif;
+  font-family: "Arial", sans‑serif;
 }
-
 .amap-chart {
   width: 100%;
   height: 380px;
-  background: #081028;
+  background: #070f26;
 }
-.charge-marker {
+.charge‑marker {
   width: 32px;
   height: 36px;
   background: #0088ff;
@@ -856,31 +886,70 @@ export default {
   line-height: 36px;
   border-radius: 6px;
   font-size: 20px;
-  box-shadow: 0 0 8px #0088ff;
+  box-shadow: 0 0 10px rgba(0, 136, 255, 0.55);
 }
-
-.amap-info {
+.amap‑info {
   color: #ffffff;
+  font-size: 13px;
+  line-height: 1.6;
 }
-.amap-info-window-content {
-  background-color: #0f1e42 !important;
-  color: #fff !important;
-  border: 1px solid #2978dd !important;
+@media screen and (max‑width: 1600px) {
+  .page‑title span {
+    font-size: 32px;
+    letter-spacing: 8px;
+  }
+  .stat‑value {
+    font-size: 26px;
+  }
 }
-.amap-info-window-tip {
-  border-top-color: #0f1e42 !important;
+@media screen and (max‑width: 1366px) {
+  .card‑row‑4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .card‑row {
+    flex-wrap: wrap;
+  }
+  .panel-left,
+  .middle-panel,
+  .right-panel,
+  .yesterday-panel,
+  .map-panel {
+    flex: unset;
+    width: 100%;
+  }
+  .yesterday-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
-.amap-info-window-close {
-  color: #fff !important;
-}
-</style>
-
-<style>
-/* 独立大屏页面 - 全屏铺满（非scoped全局生效，仅在该路由激活时影响） */
-html,
-body {
-  margin: 0;
-  padding: 0;
-  background: #050b1f;
+@media screen and (max‑width: 768px) {
+  .charge-overview {
+    padding: 14px;
+  }
+  .page‑title span {
+    font-size: 24px;
+    padding: 10px 40px;
+    letter-spacing: 4px;
+  }
+  .card‑row‑4 {
+    grid-template-columns: 1fr;
+  }
+  .yesterday-grid {
+    grid-template-columns: 1fr;
+  }
+  .panel-left {
+    flex-direction: column;
+  }
+  .today-divider {
+    width: 80%;
+    height: 1px;
+    margin: 14px 0;
+  }
+  .gauge-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .gauge-item {
+    width: 100%;
+  }
 }
 </style>

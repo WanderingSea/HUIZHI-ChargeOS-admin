@@ -8,6 +8,22 @@ import Layout from "@/layout/index";
 import ParentView from "@/components/ParentView";
 import InnerLink from "@/layout/components/InnerLink";
 
+function deepClone(obj, hash = new WeakMap()) {
+  if (obj === null || typeof obj !== "object") return obj;
+  if (obj instanceof Date) return new Date(obj);
+  if (obj instanceof RegExp) return new RegExp(obj);
+  if (typeof obj === "function") return obj;
+  if (hash.has(obj)) return hash.get(obj);
+  const clone = Array.isArray(obj) ? [] : {};
+  hash.set(obj, clone);
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      clone[key] = deepClone(obj[key], hash);
+    }
+  }
+  return clone;
+}
+
 const permission = {
   state: {
     routes: [],
@@ -35,11 +51,17 @@ const permission = {
     // 生成路由（使用前端静态定义的菜单）
     GenerateRoutes({ commit }) {
       return new Promise((resolve) => {
-        const sdata = JSON.parse(JSON.stringify(staticMenuRoutes));
-        const rdata = JSON.parse(JSON.stringify(staticMenuRoutes));
+        const sdata = deepClone(staticMenuRoutes);
+        const rdata = deepClone(staticMenuRoutes);
         const sidebarRoutes = filterAsyncRouter(sdata);
         const rewriteRoutes = filterAsyncRouter(rdata, false, true);
         const asyncRoutes = filterDynamicRoutes(dynamicRoutes);
+
+        const topStandalone = constantRoutes.filter(
+          (r) => r.path === "/workbench/dashboard"
+        );
+        if (topStandalone.length) router.addRoutes(topStandalone);
+
         rewriteRoutes.push({ path: "*", redirect: "/404", hidden: true });
         router.addRoutes(asyncRoutes);
 
@@ -57,6 +79,9 @@ const permission = {
 // 遍历后台传来的路由字符串，转换为组件对象
 function filterAsyncRouter(asyncRouterMap, lastRouter = false, type = false) {
   return asyncRouterMap.filter((route) => {
+    if (route.redirect && !route.children && !route.component) {
+      return true;
+    }
     if (type && route.children) {
       route.children = filterChildren(route.children);
     }
@@ -76,7 +101,9 @@ function filterAsyncRouter(asyncRouterMap, lastRouter = false, type = false) {
       route.children = filterAsyncRouter(route.children, route, type);
     } else {
       delete route["children"];
-      delete route["redirect"];
+      if (!route.redirect) {
+        delete route["redirect"];
+      }
     }
     return true;
   });
