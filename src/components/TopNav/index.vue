@@ -49,7 +49,7 @@ export default {
   data() {
     return {
       // 顶部栏初始数
-      visibleNumber: 5,
+      visibleNumber: 7,
       // 是否为首次加载
       isFrist: false,
       // 当前激活菜单的 index
@@ -133,10 +133,9 @@ export default {
     this.setVisibleNumber();
   },
   methods: {
-    // 根据宽度计算设置显示栏数
     setVisibleNumber() {
       const width = document.body.getBoundingClientRect().width / 3;
-      this.visibleNumber = parseInt(width / 85);
+      this.visibleNumber = Math.max(parseInt(width / 85), 7);
     },
     // 默认激活的路由
     defaultRouter() {

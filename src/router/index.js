@@ -408,6 +408,51 @@ export const staticMenuRoutes = [
     ],
   },
 
+  // 数据统计
+  {
+    path: "/statistics",
+    component: Layout,
+    redirect: "/statistics/business",
+    meta: { title: "数据统计", icon: "chart" },
+    children: [
+      {
+        path: "business",
+        component: Placeholder,
+        name: "BusinessOverview",
+        meta: { title: "经营总览", icon: "dashboard" },
+      },
+      {
+        path: "station-charge",
+        component: Placeholder,
+        name: "StationChargeStats",
+        meta: { title: "站场充电统计", icon: "chart" },
+      },
+      {
+        path: "station-run",
+        component: Placeholder,
+        name: "StationRunStats",
+        meta: { title: "站场运行统计", icon: "monitor" },
+      },
+      {
+        path: "device-charge",
+        component: Placeholder,
+        name: "DeviceChargeStats",
+        meta: { title: "设备充电统计", icon: "build" },
+      },
+      {
+        path: "station-asset",
+        component: Placeholder,
+        name: "StationAssetStats",
+        meta: { title: "站场资产统计", icon: "list" },
+      },
+      {
+        path: "device-asset",
+        component: Placeholder,
+        name: "DeviceAssetStats",
+        meta: { title: "设备资产统计", icon: "tool" },
+      },
+    ],
+  },
   //  客户管理
   {
     path: "/customer",
@@ -463,53 +508,6 @@ export const staticMenuRoutes = [
       },
     ],
   },
-
-  // 数据统计
-  {
-    path: "/statistics",
-    component: Layout,
-    redirect: "/statistics/business",
-    meta: { title: "数据统计", icon: "chart" },
-    children: [
-      {
-        path: "business",
-        component: Placeholder,
-        name: "BusinessOverview",
-        meta: { title: "经营总览", icon: "dashboard" },
-      },
-      {
-        path: "station-charge",
-        component: Placeholder,
-        name: "StationChargeStats",
-        meta: { title: "站场充电统计", icon: "chart" },
-      },
-      {
-        path: "station-run",
-        component: Placeholder,
-        name: "StationRunStats",
-        meta: { title: "站场运行统计", icon: "monitor" },
-      },
-      {
-        path: "device-charge",
-        component: Placeholder,
-        name: "DeviceChargeStats",
-        meta: { title: "设备充电统计", icon: "build" },
-      },
-      {
-        path: "station-asset",
-        component: Placeholder,
-        name: "StationAssetStats",
-        meta: { title: "站场资产统计", icon: "list" },
-      },
-      {
-        path: "device-asset",
-        component: Placeholder,
-        name: "DeviceAssetStats",
-        meta: { title: "设备资产统计", icon: "tool" },
-      },
-    ],
-  },
-
   // 营销管理
   {
     path: "/marketing",
