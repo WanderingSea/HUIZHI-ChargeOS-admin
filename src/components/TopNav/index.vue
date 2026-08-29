@@ -152,29 +152,20 @@ export default {
     handleSelect(key, keyPath) {
       this.currentIndex = key;
       if (this.ishttp(key)) {
-        // http(s):// 路径新窗口打开
         window.open(key, "_blank");
       } else if (key.indexOf("/redirect") !== -1) {
-        // /redirect 路径内部打开
         this.$router.push({ path: key.replace("/redirect", "") });
       } else {
-        // 显示左侧联动菜单
         this.activeRoutes(key);
-        // 跳转到该菜单下的第一个子路由
-        const menu = this.topMenus.find((m) => m.path === key);
-        if (menu && menu.children && menu.children.length > 0) {
-          const firstChild = menu.children[0];
-          const targetPath = firstChild.path.startsWith("/")
-            ? firstChild.path
-            : `${menu.path}/${firstChild.path}`;
-          this.$router.push({ path: targetPath });
-        } else if (menu && menu.redirect) {
+        const menu = this.topMenus.find((m) => m.path === key); //优先使用路由配置的redirect，不要自己读children（children会被filterAsyncRouter删除）
+        if (menu && menu.redirect) {
           this.$router.push({ path: menu.redirect });
         } else {
           this.$router.push({ path: key });
         }
       }
     },
+
     // 当前激活的路由
     activeRoutes(key) {
       var routes = [];
@@ -203,7 +194,7 @@ export default {
   height: 50px !important;
   line-height: 50px !important;
   color: #999093 !important;
-  padding: 0 5px !important;
+  padding: 0 3px !important;
   margin: 0 10px !important;
 }
 

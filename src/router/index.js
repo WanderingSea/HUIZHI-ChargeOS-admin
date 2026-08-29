@@ -8,26 +8,26 @@ import Layout from "@/layout";
 import ParentView from "@/components/ParentView";
 
 /**
- * Note: 路由配置项
- *
- * hidden: true                     // 当设置 true 的时候该路由不会再侧边栏出现 如401，login等页面，或者如一些编辑页面/edit/1
- * alwaysShow: true                 // 当你一个路由下面的 children 声明的路由大于1个时，自动会变成嵌套的模式--如组件页面
- *                                  // 只有一个时，会将那个子路由当做根路由显示在侧边栏--如引导页面
- *                                  // 若你想不管路由下面的 children 声明的个数都显示你的根路由
- *                                  // 你可以设置 alwaysShow: true，这样它就会忽略之前定义的规则，一直显示根路由
- * redirect: noRedirect             // 当设置 noRedirect 的时候该路由在面包屑导航中不可被点击
- * name:'router-name'               // 设定路由的名字，一定要填写不然使用<keep-alive>时会出现各种问题
- * query: '{"id": 1, "name": "vctgo"}' // 访问路由的默认传递参数
- * roles: ['admin', 'common']       // 访问路由的角色权限
- * permissions: ['a:a:a', 'b:b:b']  // 访问路由的菜单权限
- * meta : {
-    noCache: true                   // 如果设置为true，则不会被 <keep-alive> 缓存(默认 false)
-    title: 'title'                  // 设置该路由在侧边栏和面包屑中展示的名字
-    icon: 'svg-name'                // 设置该路由的图标，对应路径src/assets/icons/svg
-    breadcrumb: false               // 如果设置为false，则不会在breadcrumb面包屑中显示
-    activeMenu: '/system/user'      // 当路由设置了该属性，则会高亮相对应的侧边栏。
-  }
- */
+ * Note: 路由配置项
+ *
+ * hidden: true                     // 当设置 true 的时候该路由不会再侧边栏出现 如 401，login 等页面，或者如一些编辑页面 /edit/1
+ * alwaysShow: true                 // 当你一个路由下面的 children 声明的路由大于 1 个时，自动会变成嵌套的模式 -- 如组件页面
+ *                                  // 只有一个时，会将那个子路由当做根路由显示在侧边栏 -- 如引导页面
+ *                                  // 若你想不管路由下面的 children 声明的个数都显示你的根路由
+ *                                  // 你可以设置 alwaysShow: true，这样它就会忽略之前定义的规则，一直显示根路由
+ * redirect: noRedirect             // 当设置 noRedirect 的时候该路由在面包屑导航中不可被点击
+ * name:'router-name'               // 设定路由的名字，一定要填写不然使用<keep-alive>时会出现各种问题
+ * query: '{"id": 1, "name": "vctgo"}' // 访问路由的默认传递参数
+ * roles: ['admin', 'common']       // 访问路由的角色权限
+ * permissions: ['a:a:a', 'b:b:b']  // 访问路由的菜单权限
+ * meta : {
+    noCache: true                   // 如果设置为 true，则不会被 <keep-alive> 缓存 (默认 false)
+    title: 'title'                  // 设置该路由在侧边栏和面包屑中展示的名字
+    icon: 'svg-name'                // 设置该路由的图标，对应路径 src/assets/icons/svg
+    breadcrumb: false               // 如果设置为 false，则不会在 breadcrumb 面包屑中显示
+    activeMenu: '/system/user'      // 当路由设置了该属性，则会高亮相对应的侧边栏。
+  }
+ */
 
 const Placeholder = () => import("@/views/placeholder/index");
 export const dynamicRoutes = [];
@@ -39,7 +39,7 @@ export const constantRoutes = [
     hidden: true,
     children: [
       {
-        path: "/redirect/:path(.*)",
+        path: "/redirect/:path (.*)",
         component: () => import("@/views/redirect"),
       },
     ],
@@ -140,9 +140,8 @@ export const staticMenuRoutes = [
         meta: { title: "平台公告", icon: "message" },
       },
     ],
-  },
+  }, //  组织与权限
 
-  //  组织与权限
   {
     path: "/org",
     component: Layout,
@@ -202,9 +201,8 @@ export const staticMenuRoutes = [
         meta: { title: "操作日志", icon: "log" },
       },
     ],
-  },
+  }, // 运维管理
 
-  // 运维管理
   {
     path: "/ops",
     component: Layout,
@@ -242,9 +240,8 @@ export const staticMenuRoutes = [
         meta: { title: "保修工单", icon: "form" },
       },
     ],
-  },
+  }, // 站场设备管理
 
-  // 站场设备管理
   {
     path: "/station",
     component: Layout,
@@ -300,9 +297,8 @@ export const staticMenuRoutes = [
         meta: { title: "充电枪监管信息列表", icon: "chart" },
       },
     ],
-  },
+  }, // 订单管理
 
-  // 订单管理
   {
     path: "/order",
     component: Layout,
@@ -350,9 +346,8 @@ export const staticMenuRoutes = [
         meta: { title: "退款申请处理", icon: "edit" },
       },
     ],
-  },
+  }, // 财务管理
 
-  // 财务管理
   {
     path: "/finance",
     component: Layout,
@@ -406,9 +401,8 @@ export const staticMenuRoutes = [
         meta: { title: "发票管理", icon: "list" },
       },
     ],
-  },
+  }, // 数据统计
 
-  // 数据统计
   {
     path: "/statistics",
     component: Layout,
@@ -452,8 +446,7 @@ export const staticMenuRoutes = [
         meta: { title: "设备资产统计", icon: "tool" },
       },
     ],
-  },
-  //  客户管理
+  }, //  客户管理
   {
     path: "/customer",
     component: Layout,
@@ -507,24 +500,36 @@ export const staticMenuRoutes = [
         meta: { title: "用户反馈", icon: "message" },
       },
     ],
-  },
-  // 营销管理
+  }, // 营销管理 // 营销管理（独立一级，不是谁的父目录 / 子目录）
   {
     path: "/marketing",
     component: Layout,
-    redirect: "/marketing/value-added",
+    redirect: "/marketing/index",
     meta: { title: "营销管理", icon: "shopping" },
     children: [
       {
-        path: "value-added",
+        path: "index",
         component: Placeholder,
-        name: "ValueAddedService",
-        meta: { title: "增值服务", icon: "star" },
+        name: "MarketingIndex",
+        meta: { title: "营销管理", icon: "shopping", affix: true },
       },
     ],
-  },
-
-  // 系统设置
+  }, //- 增值服务
+  {
+    path: "/value-added",
+    component: Layout,
+    redirect: "/value-added/index",
+    name: "ValueAddedService",
+    meta: { title: "增值服务", icon: "star" },
+    children: [
+      {
+        path: "index",
+        component: Placeholder,
+        name: "ValueAddedIndex",
+        meta: { title: "增值服务", icon: "star", affix: true },
+      },
+    ],
+  }, // 系统设置
   {
     path: "/system",
     component: Layout,
@@ -580,23 +585,23 @@ export const staticMenuRoutes = [
     ],
   },
 
-  { path: "*", redirect: "/404", hidden: true },
+  //   { path: "*", redirect: "/404", hidden: true },
 ];
 
 // 防止连续点击多次路由报错
 let routerPush = Router.prototype.push;
 let routerReplace = Router.prototype.replace;
-// push
+//push
 Router.prototype.push = function push(location) {
   return routerPush.call(this, location).catch((err) => err);
 };
-// replace
+//replace
 Router.prototype.replace = function push(location) {
   return routerReplace.call(this, location).catch((err) => err);
 };
 
 export default new Router({
-  mode: "history", // 去掉url中的#
+  mode: "history", // 去掉 url 中的 #
   scrollBehavior: () => ({ y: 0 }),
   routes: constantRoutes,
 });

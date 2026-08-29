@@ -62,8 +62,9 @@ const permission = {
         );
         if (topStandalone.length) router.addRoutes(topStandalone);
 
-        rewriteRoutes.push({ path: "*", redirect: "/404", hidden: true });
+        router.addRoutes(rewriteRoutes);
         router.addRoutes(asyncRoutes);
+        router.addRoutes([{ path: "*", redirect: "/404", hidden: true }]);
 
         const topbarRoutes = sidebarRoutes;
         commit("SET_ROUTES", rewriteRoutes);
