@@ -250,19 +250,33 @@ export const staticMenuRoutes = [
     children: [
       {
         path: "monitor",
-        component: Placeholder,
+        component: () => import("@/views/station/monitor"),
         name: "StationMonitor",
         meta: { title: "场站监控", icon: "monitor" },
       },
       {
+        path: "monitor/:id",
+        component: () => import("@/views/station/detail"),
+        name: "StationMonitorDetail",
+        meta: { title: "场站监控详情", icon: "monitor" },
+        hidden: true,
+      },
+
+      {
         path: "charge-station",
-        component: Placeholder,
+        component: () => import("@/views/station/charge-station"),
         name: "ChargeStation",
         meta: { title: "充电站管理", icon: "list" },
       },
       {
+        path: "term-mgr",
+        component:()=> import("@/views/station/term-mgr")
+        name: "Terminal Manager",
+        meta: { title: "终端管理", icon: "build" },
+      },
+        {
         path: "charge-pile",
-        component: Placeholder,
+        component:ChargePile
         name: "ChargePile",
         meta: { title: "充电桩管理", icon: "build" },
       },
