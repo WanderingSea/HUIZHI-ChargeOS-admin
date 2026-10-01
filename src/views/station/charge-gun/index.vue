@@ -208,30 +208,29 @@
         </div>
       </div>
     </div>
-
-    <div
-      v-if="showDeleteModal"
-      class="modal-mask"
-      @click.self="showDeleteModal = false"
-    >
-      <div class="modal-box">
-        <div class="modal-title">确认删除</div>
-        <div class="modal-desc">
+    <div class="mask" :class="{ show: delVisible }" @click="delVisible = false">
+      <div class="modal" @click.stop>
+        <div class="modal-header">确认删除</div>
+        <p class="del-tip">
           确定要删除充电枪
-          <strong>{{ currentItem.gunNo }}</strong> 吗？该操作不可撤销。
-        </div>
-        <div class="modal-btn-group">
-          <button class="modal-btn-cancel" @click="showDeleteModal = false">
-            取消
-          </button>
-          <button class="modal-btn-confirm confirm-red" @click="confirmDelete">
-            确认删除
+          <strong>{{ deleteTarget && deleteTarget.gunCode }}</strong>
+          吗？此操作不可恢复。
+        </p>
+        <div class="modal-footer">
+          <button class="cancel-btn" @click="delVisible = false">取消</button>
+          <button
+            class="save-btn"
+            style="
+              background: linear-gradient(135deg, #f53f3f 0%, #c93030 100%);
+            "
+            @click="confirmDelete"
+          >
+            删除
           </button>
         </div>
       </div>
     </div>
-
-    <div v-if="toast" class="toast">{{ toast }}</div>
+    <div class="toast" :class="{ show: toastShow }">{{ toastMsg }}</div>
   </div>
 </template>
 
@@ -458,7 +457,6 @@ export default {
   --accent-2: #4f7295;
   --accent-soft: #e9f0f6;
   --ice: #82a8c4;
-  --ink: #1f2a37;
   --ink-2: #5a6b7b;
   --ink-3: #94a3b3;
   --ink-4: #c3ced9;
@@ -527,6 +525,7 @@ export default {
   transform: translateY(-1px);
   box-shadow: 0 10px 22px -10px rgba(79, 114, 149, 0.85);
 }
+
 .btn-outline-blue {
   color: var(--accent-2);
   border-color: var(--accent);
@@ -564,7 +563,10 @@ export default {
   background: #f8fbfd;
   border: 1px solid var(--line);
   border-radius: 10px;
-  transition: all 0.22s ease;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.filter-item input::placeholder {
+  color: #aebbca;
 }
 .filter-item input:hover,
 .filter-item select:hover {
@@ -973,7 +975,6 @@ export default {
   transform: translateX(-50%);
   animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
 @keyframes modalIn {
   from {
     opacity: 0;

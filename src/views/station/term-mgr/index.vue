@@ -670,9 +670,7 @@ export default {
   padding: 0;
 }
 
-/* ================= 容器 & 冷调主题变量 ================= */
 .terminal-page {
-  /* 冷调清雅色板 · 白色底 */
   --bg: #ffffff;
   --card: #ffffff;
   --ink: #1f2a37;

@@ -365,7 +365,6 @@ export default {
   box-sizing: border-box;
 }
 
-/* ============ 页面容器 & 设计变量 ============ */
 .page-wrap {
   --ink: #1f2a37;
   --ink-2: #5a6b7b;
@@ -389,6 +388,7 @@ export default {
   min-height: 100vh;
   max-width: 1720px;
   margin: 0 auto;
+
   padding: 28px 32px 56px;
   color: var(--ink);
   font-size: 14px;
@@ -405,7 +405,6 @@ export default {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ============ 面包屑 ============ */
 .breadcrumb {
   display: flex;
   align-items: center;
@@ -435,13 +434,13 @@ export default {
   background: var(--accent);
 }
 
-/* ============ 顶部功能按钮 ============ */
 .top-action-bar {
   display: flex;
   justify-content: flex-end;
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 16px;
+  margin-top: -20px;
 }
 .top-action-bar button {
   display: inline-flex;
@@ -602,8 +601,6 @@ export default {
   padding-top: 18px;
   border-top: 1px dashed var(--line);
 }
-
-/* ============ 电站列表 ============ */
 .station-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -634,6 +631,7 @@ export default {
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
+
   padding: 20px 22px 18px;
   background: linear-gradient(180deg, #fbfcfe 0%, #ffffff 100%);
   border-bottom: 1px solid var(--line-2);
@@ -645,6 +643,7 @@ export default {
 .station-title h2 {
   display: flex;
   align-items: center;
+
   gap: 4px;
   font-size: 18px;
   font-weight: 600;
@@ -655,6 +654,7 @@ export default {
 .station-title h2 > span {
   font-weight: 400;
   color: var(--ink-4);
+
   transition: transform 0.2s ease, color 0.2s ease;
 }
 .station-card:hover .station-title h2 > span {
@@ -665,6 +665,7 @@ export default {
 .station-title .operator-text {
   margin-top: 6px;
   font-size: 12.5px;
+
   line-height: 1.5;
   color: var(--ink-3);
   word-break: break-all;
@@ -677,6 +678,7 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+
   padding: 3px 8px;
   margin-bottom: 10px;
   font-size: 10px;
@@ -687,7 +689,6 @@ export default {
   border-radius: 999px;
 }
 
-/* ---- 卡片操作按钮 ---- */
 .card-op-buttons {
   position: relative;
   display: grid;
@@ -697,6 +698,7 @@ export default {
 }
 .card-op-buttons button {
   height: 32px;
+
   padding: 0 12px;
   font-size: 13px;
   font-weight: 500;
@@ -704,6 +706,7 @@ export default {
   border: 1px solid transparent;
   border-radius: 8px;
   cursor: pointer;
+
   transition: all 0.18s ease;
 }
 .btn-solid-red {
@@ -723,7 +726,9 @@ export default {
   background: linear-gradient(135deg, var(--accent-2) 0%, #3d5a77 100%);
 }
 .btn-outline-blue {
+  color: var(--accent-2);
   background: #fff;
+
   color: var(--accent-2);
   border-color: #d4e4f0;
 }
@@ -732,7 +737,6 @@ export default {
   border-color: var(--accent);
 }
 
-/* ---- 更多下拉 ---- */
 .more-dropdown {
   grid-column: 1 / -1;
   display: flex;
@@ -741,13 +745,16 @@ export default {
 }
 .more-dropdown > button {
   height: 30px;
+
   padding: 0 12px;
   font-size: 13px;
+
   color: var(--ink-2);
   background: transparent;
   border: 1px solid transparent;
   border-radius: 8px;
   cursor: pointer;
+
   transition: all 0.18s ease;
 }
 .more-dropdown > button:hover {
@@ -786,7 +793,6 @@ export default {
   background: var(--danger-soft);
 }
 
-/* ---- 电枪状态概览 ---- */
 .gun-summary-bar {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -849,6 +855,7 @@ export default {
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 10px;
+
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.2px;
@@ -856,6 +863,7 @@ export default {
 }
 .edit-link {
   flex-shrink: 0;
+
   font-size: 12.5px;
   font-weight: 500;
   color: var(--accent-2);
@@ -873,6 +881,7 @@ export default {
 }
 .status-badge {
   display: inline-block;
+
   padding: 3px 9px;
   margin-bottom: 8px;
   font-size: 12.5px;
@@ -914,13 +923,13 @@ export default {
   font-size: 12.5px;
   color: var(--accent-2);
   cursor: pointer;
+
   transition: opacity 0.2s ease;
 }
 .hint-link:hover {
   text-decoration: underline;
 }
 
-/* ---- 空状态 ---- */
 .empty-tip {
   grid-column: 1 / -1;
   padding: 72px 0;
@@ -932,7 +941,6 @@ export default {
   border-radius: 18px;
 }
 
-/* ============ 弹窗 ============ */
 .modal-mask {
   position: fixed;
   inset: 0;
@@ -941,6 +949,7 @@ export default {
   align-items: center;
   justify-content: center;
   padding: 24px;
+
   background: rgba(31, 42, 55, 0.45);
   backdrop-filter: blur(2px);
 }
@@ -972,8 +981,10 @@ export default {
 }
 .modal-btn-cancel {
   height: 38px;
+
   padding: 0 20px;
   font-size: 13.5px;
+
   color: var(--ink-2);
   background: #fff;
   border: 1px solid var(--line);
@@ -1060,7 +1071,6 @@ export default {
   }
 }
 
-/* ============ 响应式 ============ */
 @media (max-width: 1360px) {
   .station-list {
     grid-template-columns: 1fr;

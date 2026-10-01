@@ -239,7 +239,6 @@
         </div>
       </div>
     </div>
-
     <div v-if="toast" class="toast">{{ toast }}</div>
   </div>
 </template>
@@ -358,6 +357,7 @@ export default {
       this.modalMode = "add";
       this.formData = {
         name: "",
+
         type: "分时电价",
         peakPrice: "",
         highPrice: "",
@@ -427,6 +427,7 @@ export default {
   --accent-2: #4f7295;
   --accent-soft: #e9f0f6;
   --ice: #82a8c4;
+
   --ink: #1f2a37;
   --ink-2: #5a6b7b;
   --ink-3: #94a3b3;
@@ -525,6 +526,7 @@ export default {
 .filter-item input,
 .filter-item select {
   width: 100%;
+
   height: 38px;
   padding: 0 14px;
   font-size: 13px;

@@ -50,6 +50,7 @@
               <th>枪数</th>
               <th>运行状态</th>
               <th>入网时间</th>
+
               <th>操作</th>
             </tr>
           </thead>
@@ -274,6 +275,7 @@ export default {
       editIdx: -1,
       detailList: [],
       deleteTarget: null,
+
       toastShow: false,
       toastMsg: "",
     };

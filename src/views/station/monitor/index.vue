@@ -219,6 +219,7 @@ export default {
 </script>
 
 <style scoped>
+/* ================= 基础重置 ================= */
 * {
   box-sizing: border-box;
   margin: 0;
