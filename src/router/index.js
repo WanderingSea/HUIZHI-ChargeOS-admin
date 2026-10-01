@@ -270,43 +270,43 @@ export const staticMenuRoutes = [
       },
       {
         path: "term-mgr",
-        component:()=> import("@/views/station/term-mgr")
-        name: "Terminal Manager",
+        component: () => import("@/views/station/term-mgr"),
+        name: "TerminalMgr",
         meta: { title: "终端管理", icon: "build" },
       },
-        {
+      {
         path: "charge-pile",
-        component:ChargePile
+        component: () => import("@/views/station/charge-pile"),
         name: "ChargePile",
         meta: { title: "充电桩管理", icon: "build" },
       },
       {
         path: "charge-gun",
-        component: Placeholder,
+        component: () => import("@/views/station/charge-gun"),
         name: "ChargeGun",
         meta: { title: "充电枪管理", icon: "tool" },
       },
       {
         path: "price-rate",
-        component: Placeholder,
+        component: () => import("@/views/station/price-rate"),
         name: "PriceRate",
         meta: { title: "费率定价管理", icon: "money" },
       },
       {
         path: "station-supervise",
-        component: Placeholder,
+        component: () => import("@/views/station/station-supervise"),
         name: "StationSupervise",
         meta: { title: "充电站监管信息列表", icon: "chart" },
       },
       {
         path: "pile-supervise",
-        component: Placeholder,
+        component: () => import("@/views/station/pile-supervise"),
         name: "PileSupervise",
         meta: { title: "充电桩监管信息列表", icon: "chart" },
       },
       {
         path: "gun-supervise",
-        component: Placeholder,
+        component: () => import("@/views/station/gun-supervise"),
         name: "GunSupervise",
         meta: { title: "充电枪监管信息列表", icon: "chart" },
       },
