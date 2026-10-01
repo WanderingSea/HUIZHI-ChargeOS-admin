@@ -1,32 +1,22 @@
 <template>
-  <div class="pile-container">
-    <!--面包屑-->
+  <div class="rate-container">
     <div class="breadcrumb">
-      电站电桩 <span class="div">></span> 电桩监管信息登记
+      电站电桩 <span class="div">></span> 费率定价管理
       <span class="div">></span>
-      <strong>电桩监管信息登记列表</strong>
+      <strong>费率方案列表</strong>
     </div>
     <div class="top-action-bar">
-      <button class="btn-top btn-blue" @click="showToast('批量更新')">
-        批量更新
-      </button>
+      <button class="btn-top btn-blue" @click="openAdd">新增费率方案</button>
       <button class="btn-top btn-green" @click="showToast('导出文件开始下载')">
         导出
       </button>
     </div>
 
-    <!--提示栏-->
-    <div class="tip-bar">
-      温馨提示：请根据所在地区监管部门要求提报的信息仔细填写，平台不对信息的准确性负责。
-      <a @click="showToast('打开填写指引弹窗')">【查看填写指引】</a>
-    </div>
-
-    <!--筛选区域-->
     <div class="filter-card">
       <div class="filter-row">
         <div class="filter-item">
-          <label>电桩编号</label>
-          <input v-model="searchForm.pileCode" placeholder="请输入电桩编号" />
+          <label>方案名称</label>
+          <input v-model="searchForm.name" placeholder="请输入方案名称" />
         </div>
         <div class="filter-item">
           <label>电站名称</label>
@@ -36,11 +26,19 @@
           />
         </div>
         <div class="filter-item">
-          <label>计量精准度</label>
-          <select v-model="searchForm.precision">
-            <option value="">请选择计量精准度</option>
-            <option value="0.5S">0.5S</option>
-            <option value="0.2S">0.2S</option>
+          <label>费率类型</label>
+          <select v-model="searchForm.type">
+            <option value="">全部</option>
+            <option value="分时电价">分时电价</option>
+            <option value="统一电价">统一电价</option>
+          </select>
+        </div>
+        <div class="filter-item">
+          <label>状态</label>
+          <select v-model="searchForm.status">
+            <option value="">全部</option>
+            <option value="启用">启用</option>
+            <option value="停用">停用</option>
           </select>
         </div>
         <div class="filter-buttons">
@@ -48,29 +46,25 @@
           <button class="btn-reset" @click="resetFilter">恢复默认</button>
         </div>
       </div>
-      <div class="more-filter" @click="showToast('展开更多筛选条件')">
-        更多筛选 ∨
-      </div>
     </div>
 
-    <!--表格区域-->
     <div class="table-card">
-      <div class="table-title">电桩监管信息登记列表</div>
+      <div class="table-title">费率方案列表</div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>电桩编号</th>
-              <th>电站名称</th>
-              <th>运营商名称</th>
-              <th>正式投运时间</th>
-              <th>设备投资金额(元)</th>
-              <th>计量精准度</th>
-              <th>电桩电表号</th>
-              <th>电桩功率(kw)</th>
-              <th>设备号</th>
+              <th>方案编号</th>
+              <th>方案名称</th>
+              <th>适用电站</th>
+              <th>费率类型</th>
+              <th>尖峰电价(元/kwh)</th>
+              <th>高峰电价(元/kwh)</th>
+              <th>平段电价(元/kwh)</th>
+              <th>低谷电价(元/kwh)</th>
+              <th>服务费(元/kwh)</th>
+              <th>状态</th>
               <th>更新时间</th>
-              <th>操作人</th>
               <th>操作</th>
             </tr>
           </thead>
@@ -78,28 +72,42 @@
             <tr v-if="pageData.length === 0">
               <td
                 colspan="12"
-                style="text-align: center; padding: 30px; color: #6b7280"
+                style="text-align: center; padding: 30px; color: #94a3b3"
               >
                 暂无数据
               </td>
             </tr>
-            <tr v-else v-for="item in pageData" :key="item.pileCode">
-              <td>{{ item.pileCode }}</td>
-              <td>{{ item.stationName }}</td>
-              <td>{{ item.operator }}</td>
-              <td>{{ item.runTime || "——" }}</td>
-              <td>{{ item.invest || "——" }}</td>
-              <td>{{ item.precision || "——" }}</td>
-              <td>{{ item.meterNo || "——" }}</td>
-              <td>{{ item.power || "——" }}</td>
-              <td>{{ item.deviceNo || "——" }}</td>
-              <td>{{ item.updateTime || "——" }}</td>
-              <td>{{ item.operatorUser || "——" }}</td>
+            <tr v-else v-for="item in pageData" :key="item.code">
+              <td>{{ item.code }}</td>
+              <td>{{ item.name }}</td>
+              <td>{{ item.stationName || "全部电站" }}</td>
+              <td>
+                <span
+                  :class="[
+                    'type-tag',
+                    item.type === '分时电价' ? 'time' : 'flat',
+                  ]"
+                  >{{ item.type }}</span
+                >
+              </td>
+              <td>{{ item.peakPrice || "——" }}</td>
+              <td>{{ item.highPrice || "——" }}</td>
+              <td>{{ item.flatPrice || "——" }}</td>
+              <td>{{ item.lowPrice || "——" }}</td>
+              <td>{{ item.servicePrice }}</td>
+              <td>
+                <span
+                  :class="['status-tag', item.status === '启用' ? 'on' : 'off']"
+                  >{{ item.status }}</span
+                >
+              </td>
+              <td>{{ item.updateTime }}</td>
               <td class="operate">
                 <button class="btn-edit" @click="openEdit(item)">编辑</button>
                 <button class="btn-detail" @click="openDetail(item)">
                   详情
                 </button>
+                <button class="btn-del" @click="openDelete(item)">删除</button>
               </td>
             </tr>
           </tbody>
@@ -113,7 +121,7 @@
         >
           上一页
         </button>
-        <span id="pageBox">
+        <span>
           <span
             class="page-num"
             :class="{ active: currentPage === i }"
@@ -147,54 +155,64 @@
       </div>
     </div>
 
-    <!--编辑弹窗-->
     <div
       class="mask"
       :class="{ show: editVisible }"
       @click="handleMaskClose('edit')"
     >
       <div class="modal" @click.stop>
-        <div class="modal-header">编辑电桩监管信息</div>
+        <div class="modal-header">
+          {{ isAdd ? "新增费率方案" : "编辑费率方案" }}
+        </div>
         <div class="form-grid">
           <div class="form-item">
-            <label>电桩编号</label>
-            <input v-model="editForm.pileCode" />
+            <label>方案编号</label>
+            <input v-model="editForm.code" :disabled="!isAdd" />
           </div>
           <div class="form-item">
-            <label>电站名称</label>
-            <input v-model="editForm.stationName" />
+            <label>方案名称</label>
+            <input v-model="editForm.name" />
           </div>
           <div class="form-item">
-            <label>运营商名称</label>
-            <input v-model="editForm.operator" />
+            <label>适用电站</label>
+            <input
+              v-model="editForm.stationName"
+              placeholder="留空为全部电站"
+            />
           </div>
           <div class="form-item">
-            <label>正式投运时间</label>
-            <input v-model="editForm.runTime" type="date" />
-          </div>
-          <div class="form-item">
-            <label>设备投资金额(元)</label>
-            <input v-model="editForm.invest" />
-          </div>
-          <div class="form-item">
-            <label>计量精准度</label>
-            <select v-model="editForm.precision">
-              <option value="">--请选择--</option>
-              <option value="0.2S">0.2S</option>
-              <option value="0.5S">0.5S</option>
+            <label>费率类型</label>
+            <select v-model="editForm.type">
+              <option value="分时电价">分时电价</option>
+              <option value="统一电价">统一电价</option>
             </select>
           </div>
           <div class="form-item">
-            <label>电桩电表号</label>
-            <input v-model="editForm.meterNo" />
+            <label>尖峰电价(元/kwh)</label>
+            <input v-model="editForm.peakPrice" type="number" step="0.01" />
           </div>
           <div class="form-item">
-            <label>电桩功率(kw)</label>
-            <input v-model="editForm.power" />
+            <label>高峰电价(元/kwh)</label>
+            <input v-model="editForm.highPrice" type="number" step="0.01" />
           </div>
           <div class="form-item">
-            <label>设备号</label>
-            <input v-model="editForm.deviceNo" />
+            <label>平段电价(元/kwh)</label>
+            <input v-model="editForm.flatPrice" type="number" step="0.01" />
+          </div>
+          <div class="form-item">
+            <label>低谷电价(元/kwh)</label>
+            <input v-model="editForm.lowPrice" type="number" step="0.01" />
+          </div>
+          <div class="form-item">
+            <label>服务费(元/kwh)</label>
+            <input v-model="editForm.servicePrice" type="number" step="0.01" />
+          </div>
+          <div class="form-item">
+            <label>状态</label>
+            <select v-model="editForm.status">
+              <option value="启用">启用</option>
+              <option value="停用">停用</option>
+            </select>
           </div>
         </div>
         <div class="modal-footer">
@@ -204,14 +222,13 @@
       </div>
     </div>
 
-    <!--详情弹窗-->
     <div
       class="mask"
       :class="{ show: detailVisible }"
       @click="handleMaskClose('detail')"
     >
       <div class="modal" @click.stop>
-        <div class="modal-header">电桩监管信息详情</div>
+        <div class="modal-header">费率方案详情</div>
         <div class="detail-grid">
           <div
             class="detail-item"
@@ -230,190 +247,157 @@
       </div>
     </div>
 
+    <div class="mask" :class="{ show: delVisible }" @click="delVisible = false">
+      <div class="modal" @click.stop>
+        <div class="modal-header">确认删除</div>
+        <p class="del-tip">
+          确定要删除费率方案
+          <strong>{{ deleteTarget && deleteTarget.name }}</strong>
+          吗？此操作不可恢复。
+        </p>
+        <div class="modal-footer">
+          <button class="cancel-btn" @click="delVisible = false">取消</button>
+          <button
+            class="save-btn"
+            style="
+              background: linear-gradient(135deg, #f53f3f 0%, #c93030 100%);
+            "
+            @click="confirmDelete"
+          >
+            删除
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="toast" :class="{ show: toastShow }">{{ toastMsg }}</div>
   </div>
 </template>
 
 <script>
 export default {
-  name: "PileRegisterList",
+  name: "PriceRate",
   data() {
     return {
       sourceData: [
         {
-          pileCode: "32010600832249",
+          code: "RT2026001",
+          name: "同星峰谷电价方案A",
           stationName: "同星旭智充站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "",
-          operatorUser: "",
+          type: "分时电价",
+          peakPrice: "1.80",
+          highPrice: "1.20",
+          flatPrice: "0.80",
+          lowPrice: "0.40",
+          servicePrice: "0.60",
+          status: "启用",
+          updateTime: "2026-06-01 10:20:15",
         },
         {
-          pileCode: "32010600832248",
-          stationName: "同星旭智充站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "",
-          operatorUser: "",
-        },
-        {
-          pileCode: "32010601174425",
+          code: "RT2026002",
+          name: "同星峰谷电价方案B",
           stationName: "同星东马坊充电站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "2026-04-14 09:37:56",
-          operatorUser: "admin",
+          type: "分时电价",
+          peakPrice: "1.60",
+          highPrice: "1.10",
+          flatPrice: "0.70",
+          lowPrice: "0.35",
+          servicePrice: "0.55",
+          status: "启用",
+          updateTime: "2026-05-20 14:30:22",
         },
         {
-          pileCode: "32010601129513",
-          stationName: "同星东马坊充电站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "",
-          operatorUser: "",
-        },
-        {
-          pileCode: "32010601047756",
-          stationName: "同星东马坊充电站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "2025-12-03 17:09:44",
-          operatorUser: "admin",
-        },
-        {
-          pileCode: "32010600832246",
+          code: "RT2026003",
+          name: "同星统一电价方案",
           stationName: "同星南桥里充电站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "",
-          operatorUser: "",
+          type: "统一电价",
+          peakPrice: "",
+          highPrice: "",
+          flatPrice: "1.20",
+          lowPrice: "",
+          servicePrice: "0.50",
+          status: "启用",
+          updateTime: "2026-04-15 09:10:08",
         },
         {
-          pileCode: "32010600981460",
+          code: "RT2026004",
+          name: "东马坊快充站方案",
           stationName: "同星东马坊充电站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "2026-09-01 06:50:30",
-          operatorUser: "admin",
+          type: "分时电价",
+          peakPrice: "2.00",
+          highPrice: "1.40",
+          flatPrice: "0.90",
+          lowPrice: "0.45",
+          servicePrice: "0.70",
+          status: "启用",
+          updateTime: "2026-08-10 16:45:33",
         },
         {
-          pileCode: "32010600981459",
-          stationName: "同星东马坊充电站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "2026-09-01 06:50:30",
-          operatorUser: "admin",
-        },
-        {
-          pileCode: "32010600964370",
-          stationName: "同星南桥里充电站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "2025-09-25 16:10:26",
-          operatorUser: "admin",
-        },
-        {
-          pileCode: "32010600964369",
-          stationName: "同星南桥里充电站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "2025-09-25 16:10:26",
-          operatorUser: "admin",
-        },
-        {
-          pileCode: "32010600832250",
+          code: "RT2026005",
+          name: "旭智充站新版方案",
           stationName: "同星旭智充站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "",
-          operatorUser: "",
+          type: "分时电价",
+          peakPrice: "1.90",
+          highPrice: "1.30",
+          flatPrice: "0.85",
+          lowPrice: "0.42",
+          servicePrice: "0.65",
+          status: "停用",
+          updateTime: "2026-03-28 11:20:50",
         },
         {
-          pileCode: "32010600832251",
+          code: "RT2026006",
+          name: "南桥里慢充专用",
+          stationName: "同星南桥里充电站",
+          type: "统一电价",
+          peakPrice: "",
+          highPrice: "",
+          flatPrice: "0.80",
+          lowPrice: "",
+          servicePrice: "0.30",
+          status: "启用",
+          updateTime: "2026-07-05 08:55:41",
+        },
+        {
+          code: "RT2026007",
+          name: "全站默认方案",
+          stationName: "",
+          type: "分时电价",
+          peakPrice: "1.50",
+          highPrice: "1.00",
+          flatPrice: "0.60",
+          lowPrice: "0.30",
+          servicePrice: "0.50",
+          status: "启用",
+          updateTime: "2026-01-01 00:00:00",
+        },
+        {
+          code: "RT2026008",
+          name: "夏季尖峰加价方案",
           stationName: "同星旭智充站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "",
-          operatorUser: "admin",
+          type: "分时电价",
+          peakPrice: "2.20",
+          highPrice: "1.50",
+          flatPrice: "0.95",
+          lowPrice: "0.48",
+          servicePrice: "0.70",
+          status: "停用",
+          updateTime: "2026-06-15 17:30:00",
         },
       ],
       filterList: [],
-      searchForm: {
-        pileCode: "",
-        stationName: "",
-        precision: "",
-      },
+      searchForm: { name: "", stationName: "", type: "", status: "" },
       currentPage: 1,
       pageSize: 10,
       jumpPage: 1,
-
       editVisible: false,
+      isAdd: false,
       editForm: {},
       editOriginRow: null,
-
       detailVisible: false,
       detailFields: [],
-
+      delVisible: false,
+      deleteTarget: null,
       toastShow: false,
       toastMsg: "",
     };
@@ -423,13 +407,13 @@ export default {
       return Math.max(1, Math.ceil(this.filterList.length / this.pageSize));
     },
     pageData() {
-      const start = (this.currentPage - 1) * this.pageSize;
-      return this.filterList.slice(start, start + this.pageSize);
+      const s = (this.currentPage - 1) * this.pageSize;
+      return this.filterList.slice(s, s + this.pageSize);
     },
   },
   watch: {
-    currentPage(val) {
-      this.jumpPage = val;
+    currentPage(v) {
+      this.jumpPage = v;
     },
   },
   mounted() {
@@ -443,22 +427,34 @@ export default {
         this.toastShow = false;
       }, 1800);
     },
-    //筛选
+    nowStr() {
+      const n = new Date();
+      return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}-${String(n.getDate()).padStart(2, "0")} ${String(
+        n.getHours()
+      ).padStart(2, "0")}:${String(n.getMinutes()).padStart(2, "0")}:${String(
+        n.getSeconds()
+      ).padStart(2, "0")}`;
+    },
     handleSearch() {
-      const pCode = this.searchForm.pileCode.trim();
-      const sName = this.searchForm.stationName.trim();
-      const pre = this.searchForm.precision;
-      this.filterList = this.sourceData.filter((row) => {
-        let matchPile = !pCode || row.pileCode.includes(pCode);
-        let matchStation = !sName || row.stationName.includes(sName);
-        let matchPrecision = !pre || row.precision === pre;
-        return matchPile && matchStation && matchPrecision;
-      });
+      const n = this.searchForm.name.trim();
+      const s = this.searchForm.stationName.trim();
+      const t = this.searchForm.type;
+      const st = this.searchForm.status;
+      this.filterList = this.sourceData.filter(
+        (r) =>
+          (!n || r.name.includes(n)) &&
+          (!s || (r.stationName && r.stationName.includes(s))) &&
+          (!t || r.type === t) &&
+          (!st || r.status === st)
+      );
       this.currentPage = 1;
       this.showToast("筛选完成");
     },
     resetFilter() {
-      this.searchForm = { pileCode: "", stationName: "", precision: "" };
+      this.searchForm = { name: "", stationName: "", type: "", status: "" };
       this.filterList = [...this.sourceData];
       this.currentPage = 1;
       this.showToast("筛选条件已重置");
@@ -468,69 +464,87 @@ export default {
       p = Math.min(Math.max(1, p), this.totalPage);
       this.currentPage = p;
     },
-    //编辑
+    openAdd() {
+      this.isAdd = true;
+      this.editForm = {
+        code: "",
+        name: "",
+        stationName: "",
+        type: "分时电价",
+        peakPrice: "",
+        highPrice: "",
+        flatPrice: "",
+        lowPrice: "",
+        servicePrice: "0.50",
+        status: "启用",
+      };
+      this.editVisible = true;
+    },
     openEdit(row) {
+      this.isAdd = false;
       this.editOriginRow = row;
       this.editForm = { ...row };
       this.editVisible = true;
     },
     saveEdit() {
-      const idx = this.sourceData.findIndex(
-        (x) => x.pileCode === this.editOriginRow.pileCode
-      );
-      const now = new Date();
-      const timeStr = `${now.getFullYear()}-${String(
-        now.getMonth() + 1
-      ).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(
-        now.getHours()
-      ).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(
-        now.getSeconds()
-      ).padStart(2, "0")}`;
-      this.sourceData[idx] = {
-        ...this.editForm,
-        updateTime: timeStr,
-        operatorUser: "admin",
-      };
+      if (this.isAdd) {
+        this.sourceData.unshift({
+          ...this.editForm,
+          updateTime: this.nowStr(),
+        });
+      } else {
+        const idx = this.sourceData.findIndex(
+          (x) => x.code === this.editOriginRow.code
+        );
+        this.sourceData[idx] = { ...this.editForm, updateTime: this.nowStr() };
+      }
       this.filterList = [...this.sourceData];
       this.editVisible = false;
-      this.showToast("保存成功！");
+      this.showToast(this.isAdd ? "新增成功！" : "保存成功！");
     },
-    //详情
     openDetail(row) {
       this.detailFields = [
-        { label: "电桩编号", value: row.pileCode },
-        { label: "电站名称", value: row.stationName },
-        { label: "运营商名称", value: row.operator },
-        { label: "正式投运时间", value: row.runTime },
-        { label: "设备投资金额(元)", value: row.invest },
-        { label: "计量精准度", value: row.precision },
-        { label: "电桩电表号", value: row.meterNo },
-        { label: "电桩功率(kw)", value: row.power },
-        { label: "设备号", value: row.deviceNo },
+        { label: "方案编号", value: row.code },
+        { label: "方案名称", value: row.name },
+        { label: "适用电站", value: row.stationName || "全部电站" },
+        { label: "费率类型", value: row.type },
+        { label: "尖峰电价(元/kwh)", value: row.peakPrice },
+        { label: "高峰电价(元/kwh)", value: row.highPrice },
+        { label: "平段电价(元/kwh)", value: row.flatPrice },
+        { label: "低谷电价(元/kwh)", value: row.lowPrice },
+        { label: "服务费(元/kwh)", value: row.servicePrice },
+        { label: "状态", value: row.status },
         { label: "更新时间", value: row.updateTime },
-        { label: "操作人", value: row.operatorUser },
       ];
       this.detailVisible = true;
     },
-    handleMaskClose(type) {
-      if (type === "edit") this.editVisible = false;
-      if (type === "detail") this.detailVisible = false;
+    openDelete(row) {
+      this.deleteTarget = row;
+      this.delVisible = true;
+    },
+    confirmDelete() {
+      this.sourceData = this.sourceData.filter(
+        (x) => x.code !== this.deleteTarget.code
+      );
+      this.filterList = [...this.sourceData];
+      this.delVisible = false;
+      this.showToast("删除成功！");
+    },
+    handleMaskClose(t) {
+      if (t === "edit") this.editVisible = false;
+      if (t === "detail") this.detailVisible = false;
     },
   },
 };
 </script>
 
 <style scoped>
-/* ================= 基础重置 ================= */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
-
-/* ================= 容器 & 冷调主题变量 ================= */
-.pile-container {
-  /* 冷调清雅色板 · 白色底 */
+.rate-container {
   --bg: #ffffff;
   --card: #ffffff;
   --ink: #1f2a37;
@@ -539,12 +553,11 @@ export default {
   --ink-4: #c3ced9;
   --line: #e4eaf1;
   --line-2: #eef3f8;
-  --accent: #6b8fb0; /* 主色：柔和钢蓝 */
-  --accent-2: #4f7295; /* 主色加深 */
+  --accent: #6b8fb0;
+  --accent-2: #4f7295;
   --accent-soft: #e9f0f6;
-  --ice: #82a8c4; /* 辅色：冰蓝 */
+  --ice: #82a8c4;
   --ice-soft: #e8f2f8;
-
   min-height: 100vh;
   padding: 32px 40px 64px;
   background-color: var(--bg);
@@ -557,8 +570,6 @@ export default {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
-/* ================= 面包屑 ================= */
 .breadcrumb {
   display: flex;
   align-items: center;
@@ -587,8 +598,6 @@ export default {
   border-radius: 50%;
   background: var(--accent);
 }
-
-/* ================= 顶部功能按钮 ================= */
 .top-action-bar {
   display: flex;
   justify-content: flex-end;
@@ -633,44 +642,6 @@ export default {
   transform: translateY(-1px);
   box-shadow: 0 10px 22px -10px rgba(94, 136, 171, 0.85);
 }
-
-/* ================= 提示栏 ================= */
-.tip-bar {
-  position: relative;
-  padding: 14px 20px 14px 48px;
-  margin-bottom: 20px;
-  font-size: 13px;
-  line-height: 1.75;
-  color: #4f7295;
-  background: linear-gradient(135deg, #f3f8fc 0%, #eef6fb 100%);
-  border: 1px solid #dceaf4;
-  border-radius: 14px;
-}
-.tip-bar::before {
-  content: "";
-  position: absolute;
-  left: 22px;
-  top: 20px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--ice);
-  box-shadow: 0 0 0 4px rgba(130, 168, 196, 0.18);
-}
-.tip-bar a {
-  color: var(--accent-2);
-  font-weight: 500;
-  cursor: pointer;
-  text-decoration: none;
-  border-bottom: 1px dashed rgba(79, 114, 149, 0.5);
-  transition: all 0.2s ease;
-}
-.tip-bar a:hover {
-  color: #3d5a77;
-  border-bottom-color: #3d5a77;
-}
-
-/* ================= 筛选卡片 ================= */
 .filter-card {
   padding: 24px 26px;
   margin-bottom: 18px;
@@ -764,23 +735,6 @@ export default {
   background: var(--accent-soft);
   border-color: var(--accent);
 }
-.more-filter {
-  width: fit-content;
-  margin: 16px auto 0;
-  padding: 6px 16px;
-  font-size: 13px;
-  color: var(--accent);
-  border-radius: 999px;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-.more-filter:hover {
-  background: var(--accent-soft);
-  color: var(--accent-2);
-}
-
-/* ================= 表格卡片 ================= */
 .table-card {
   padding-bottom: 20px;
   background: var(--card);
@@ -817,7 +771,6 @@ export default {
   height: 1px;
   background: var(--line-2);
 }
-
 .table-wrap {
   overflow-x: auto;
   padding: 0 14px;
@@ -825,25 +778,15 @@ export default {
 .table-wrap::-webkit-scrollbar {
   height: 8px;
 }
-.table-wrap::-webkit-scrollbar-track {
-  background: transparent;
-}
 .table-wrap::-webkit-scrollbar-thumb {
   background: #d3dde6;
   border-radius: 4px;
 }
-.table-wrap::-webkit-scrollbar-thumb:hover {
-  background: #bccad6;
-}
-
 table {
   width: 100%;
-  min-width: 1350px;
+  min-width: 1300px;
   border-collapse: separate;
   border-spacing: 0;
-}
-thead tr {
-  background: transparent;
 }
 thead th {
   padding: 12px 14px;
@@ -865,7 +808,6 @@ thead th:last-child {
   border-radius: 0 10px 10px 0;
   border-right: 1px solid var(--line-2);
 }
-
 tbody td {
   padding: 16px 14px;
   font-size: 13px;
@@ -881,8 +823,42 @@ tbody tr:hover td {
   background: #f7fbfe;
   color: var(--ink);
 }
-
-/* 操作按钮 */
+.type-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+}
+.type-tag.time {
+  color: var(--accent-2);
+  background: var(--ice-soft);
+  border: 1px solid #cddfe9;
+}
+.type-tag.flat {
+  color: #fff;
+  background: linear-gradient(135deg, #6b8fb0 0%, #4f7295 100%);
+  box-shadow: 0 4px 10px -4px rgba(79, 114, 149, 0.6);
+}
+.status-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+}
+.status-tag.on {
+  color: #fff;
+  background: linear-gradient(135deg, #6b8fb0 0%, #4f7295 100%);
+  box-shadow: 0 4px 10px -4px rgba(79, 114, 149, 0.6);
+}
+.status-tag.off {
+  color: #86909c;
+  background: #f2f3f5;
+  border: 1px solid #e5e6eb;
+}
 .operate {
   white-space: nowrap;
 }
@@ -910,8 +886,12 @@ tbody tr:hover td {
 .btn-detail:hover {
   background: var(--ice-soft);
 }
-
-/* ================= 分页 ================= */
+.btn-del {
+  color: #f53f3f;
+}
+.btn-del:hover {
+  background: rgba(245, 63, 63, 0.08);
+}
 .pagination-wrap {
   display: flex;
   align-items: center;
@@ -1005,8 +985,6 @@ tbody tr:hover td {
   background: #fff;
   border-color: var(--accent);
 }
-
-/* ================= 弹窗 ================= */
 .mask {
   position: fixed;
   inset: 0;
@@ -1061,8 +1039,6 @@ tbody tr:hover td {
   border-radius: 2px;
   background: linear-gradient(180deg, var(--accent) 0%, var(--ice) 100%);
 }
-
-/* 表单 */
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1088,6 +1064,11 @@ tbody tr:hover td {
   border-radius: 10px;
   transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
+.form-item input:disabled {
+  background: #eef1f5;
+  color: var(--ink-3);
+  cursor: not-allowed;
+}
 .form-item input:focus,
 .form-item select:focus {
   outline: none;
@@ -1095,7 +1076,6 @@ tbody tr:hover td {
   border-color: var(--accent);
   box-shadow: 0 0 0 4px rgba(107, 143, 176, 0.12);
 }
-
 .modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -1138,8 +1118,15 @@ tbody tr:hover td {
 .save-btn:active {
   transform: translateY(0);
 }
-
-/* 详情 */
+.del-tip {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.7;
+  margin-bottom: 4px;
+}
+.del-tip strong {
+  color: #f53f3f;
+}
 .detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1169,8 +1156,6 @@ tbody tr:hover td {
   color: var(--ink);
   word-break: break-all;
 }
-
-/* ================= Toast ================= */
 .toast {
   position: fixed;
   left: 50%;
@@ -1192,8 +1177,6 @@ tbody tr:hover td {
   display: block;
   animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
-/* ================= 动画 ================= */
 @keyframes modalIn {
   from {
     opacity: 0;
@@ -1214,10 +1197,8 @@ tbody tr:hover td {
     transform: translate(-50%, 0);
   }
 }
-
-/* ================= 响应式 ================= */
 @media (max-width: 1024px) {
-  .pile-container {
+  .rate-container {
     padding: 24px 22px 48px;
   }
   .form-grid,
@@ -1226,11 +1207,8 @@ tbody tr:hover td {
   }
 }
 @media (max-width: 640px) {
-  .pile-container {
+  .rate-container {
     padding: 20px 16px 40px;
-  }
-  .breadcrumb {
-    gap: 6px;
   }
   .filter-item input,
   .filter-item select {

@@ -1,10 +1,9 @@
 <template>
-  <div class="pile-container">
-    <!--面包屑-->
+  <div class="gun-container">
     <div class="breadcrumb">
-      电站电桩 <span class="div">></span> 电桩监管信息登记
+      电站电桩 <span class="div">></span> 充电枪监管信息登记
       <span class="div">></span>
-      <strong>电桩监管信息登记列表</strong>
+      <strong>充电枪监管信息登记列表</strong>
     </div>
     <div class="top-action-bar">
       <button class="btn-top btn-blue" @click="showToast('批量更新')">
@@ -15,17 +14,19 @@
       </button>
     </div>
 
-    <!--提示栏-->
     <div class="tip-bar">
       温馨提示：请根据所在地区监管部门要求提报的信息仔细填写，平台不对信息的准确性负责。
       <a @click="showToast('打开填写指引弹窗')">【查看填写指引】</a>
     </div>
 
-    <!--筛选区域-->
     <div class="filter-card">
       <div class="filter-row">
         <div class="filter-item">
-          <label>电桩编号</label>
+          <label>枪编号</label>
+          <input v-model="searchForm.gunCode" placeholder="请输入枪编号" />
+        </div>
+        <div class="filter-item">
+          <label>所属电桩</label>
           <input v-model="searchForm.pileCode" placeholder="请输入电桩编号" />
         </div>
         <div class="filter-item">
@@ -36,11 +37,11 @@
           />
         </div>
         <div class="filter-item">
-          <label>计量精准度</label>
-          <select v-model="searchForm.precision">
-            <option value="">请选择计量精准度</option>
-            <option value="0.5S">0.5S</option>
-            <option value="0.2S">0.2S</option>
+          <label>枪类型</label>
+          <select v-model="searchForm.gunType">
+            <option value="">全部</option>
+            <option value="快充枪">快充枪</option>
+            <option value="慢充枪">慢充枪</option>
           </select>
         </div>
         <div class="filter-buttons">
@@ -53,22 +54,22 @@
       </div>
     </div>
 
-    <!--表格区域-->
     <div class="table-card">
-      <div class="table-title">电桩监管信息登记列表</div>
+      <div class="table-title">充电枪监管信息登记列表</div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>电桩编号</th>
+              <th>枪编号</th>
+              <th>所属电桩</th>
               <th>电站名称</th>
               <th>运营商名称</th>
-              <th>正式投运时间</th>
-              <th>设备投资金额(元)</th>
+              <th>枪类型</th>
+              <th>额定电压(V)</th>
+              <th>额定电流(A)</th>
               <th>计量精准度</th>
-              <th>电桩电表号</th>
-              <th>电桩功率(kw)</th>
-              <th>设备号</th>
+              <th>枪电表号</th>
+              <th>正式投运时间</th>
               <th>更新时间</th>
               <th>操作人</th>
               <th>操作</th>
@@ -77,22 +78,32 @@
           <tbody>
             <tr v-if="pageData.length === 0">
               <td
-                colspan="12"
-                style="text-align: center; padding: 30px; color: #6b7280"
+                colspan="13"
+                style="text-align: center; padding: 30px; color: #94a3b3"
               >
                 暂无数据
               </td>
             </tr>
-            <tr v-else v-for="item in pageData" :key="item.pileCode">
+            <tr v-else v-for="item in pageData" :key="item.gunCode">
+              <td>{{ item.gunCode }}</td>
               <td>{{ item.pileCode }}</td>
               <td>{{ item.stationName }}</td>
               <td>{{ item.operator }}</td>
-              <td>{{ item.runTime || "——" }}</td>
-              <td>{{ item.invest || "——" }}</td>
+              <td>
+                <span
+                  :class="[
+                    'gun-tag',
+                    item.gunType === '快充枪' ? 'fast' : 'slow',
+                  ]"
+                >
+                  {{ item.gunType || "——" }}
+                </span>
+              </td>
+              <td>{{ item.voltage || "——" }}</td>
+              <td>{{ item.current || "——" }}</td>
               <td>{{ item.precision || "——" }}</td>
               <td>{{ item.meterNo || "——" }}</td>
-              <td>{{ item.power || "——" }}</td>
-              <td>{{ item.deviceNo || "——" }}</td>
+              <td>{{ item.runTime || "——" }}</td>
               <td>{{ item.updateTime || "——" }}</td>
               <td>{{ item.operatorUser || "——" }}</td>
               <td class="operate">
@@ -113,7 +124,7 @@
         >
           上一页
         </button>
-        <span id="pageBox">
+        <span>
           <span
             class="page-num"
             :class="{ active: currentPage === i }"
@@ -136,8 +147,8 @@
           v-model="jumpPage"
           @keydown.enter="handleJump"
         />
-        <span
-          >页 &nbsp;共{{ filterList.length }}条 &nbsp;每页
+        <span>
+          页 &nbsp;共{{ filterList.length }}条 &nbsp;每页
           <select v-model="pageSize" @change="currentPage = 1">
             <option value="10">10</option>
             <option value="20">20</option>
@@ -147,17 +158,20 @@
       </div>
     </div>
 
-    <!--编辑弹窗-->
     <div
       class="mask"
       :class="{ show: editVisible }"
       @click="handleMaskClose('edit')"
     >
       <div class="modal" @click.stop>
-        <div class="modal-header">编辑电桩监管信息</div>
+        <div class="modal-header">编辑充电枪监管信息</div>
         <div class="form-grid">
           <div class="form-item">
-            <label>电桩编号</label>
+            <label>枪编号</label>
+            <input v-model="editForm.gunCode" />
+          </div>
+          <div class="form-item">
+            <label>所属电桩</label>
             <input v-model="editForm.pileCode" />
           </div>
           <div class="form-item">
@@ -169,12 +183,20 @@
             <input v-model="editForm.operator" />
           </div>
           <div class="form-item">
-            <label>正式投运时间</label>
-            <input v-model="editForm.runTime" type="date" />
+            <label>枪类型</label>
+            <select v-model="editForm.gunType">
+              <option value="">--请选择--</option>
+              <option value="快充枪">快充枪</option>
+              <option value="慢充枪">慢充枪</option>
+            </select>
           </div>
           <div class="form-item">
-            <label>设备投资金额(元)</label>
-            <input v-model="editForm.invest" />
+            <label>额定电压(V)</label>
+            <input v-model="editForm.voltage" />
+          </div>
+          <div class="form-item">
+            <label>额定电流(A)</label>
+            <input v-model="editForm.current" />
           </div>
           <div class="form-item">
             <label>计量精准度</label>
@@ -185,16 +207,12 @@
             </select>
           </div>
           <div class="form-item">
-            <label>电桩电表号</label>
+            <label>枪电表号</label>
             <input v-model="editForm.meterNo" />
           </div>
           <div class="form-item">
-            <label>电桩功率(kw)</label>
-            <input v-model="editForm.power" />
-          </div>
-          <div class="form-item">
-            <label>设备号</label>
-            <input v-model="editForm.deviceNo" />
+            <label>正式投运时间</label>
+            <input v-model="editForm.runTime" type="date" />
           </div>
         </div>
         <div class="modal-footer">
@@ -204,14 +222,13 @@
       </div>
     </div>
 
-    <!--详情弹窗-->
     <div
       class="mask"
       :class="{ show: detailVisible }"
       @click="handleMaskClose('detail')"
     >
       <div class="modal" @click.stop>
-        <div class="modal-header">电桩监管信息详情</div>
+        <div class="modal-header">充电枪监管信息详情</div>
         <div class="detail-grid">
           <div
             class="detail-item"
@@ -236,172 +253,185 @@
 
 <script>
 export default {
-  name: "PileRegisterList",
+  name: "GunSuperviseList",
   data() {
     return {
       sourceData: [
         {
+          gunCode: "G32010600832249-1",
           pileCode: "32010600832249",
           stationName: "同星旭智充站",
           operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
+          gunType: "快充枪",
+          voltage: "380",
+          current: "250",
+          precision: "0.5S",
           meterNo: "",
-          power: "",
-          deviceNo: "",
+          runTime: "",
           updateTime: "",
           operatorUser: "",
         },
         {
-          pileCode: "32010600832248",
+          gunCode: "G32010600832249-2",
+          pileCode: "32010600832249",
           stationName: "同星旭智充站",
           operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
+          gunType: "慢充枪",
+          voltage: "220",
+          current: "32",
+          precision: "0.5S",
           meterNo: "",
-          power: "",
-          deviceNo: "",
+          runTime: "",
           updateTime: "",
           operatorUser: "",
         },
         {
+          gunCode: "G32010601174425-1",
           pileCode: "32010601174425",
           stationName: "同星东马坊充电站",
           operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
+          gunType: "快充枪",
+          voltage: "380",
+          current: "200",
+          precision: "0.2S",
+          meterNo: "DJ20260414001",
+          runTime: "2026-03-01",
           updateTime: "2026-04-14 09:37:56",
           operatorUser: "admin",
         },
         {
-          pileCode: "32010601129513",
+          gunCode: "G32010601174425-2",
+          pileCode: "32010601174425",
           stationName: "同星东马坊充电站",
           operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "",
-          operatorUser: "",
+          gunType: "快充枪",
+          voltage: "380",
+          current: "200",
+          precision: "0.2S",
+          meterNo: "DJ20260414002",
+          runTime: "2026-03-01",
+          updateTime: "2026-04-14 09:37:56",
+          operatorUser: "admin",
         },
         {
+          gunCode: "G32010601047756-1",
           pileCode: "32010601047756",
           stationName: "同星东马坊充电站",
           operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
+          gunType: "慢充枪",
+          voltage: "220",
+          current: "32",
+          precision: "0.5S",
           meterNo: "",
-          power: "",
-          deviceNo: "",
+          runTime: "",
           updateTime: "2025-12-03 17:09:44",
           operatorUser: "admin",
         },
         {
+          gunCode: "G32010600832246-1",
           pileCode: "32010600832246",
           stationName: "同星南桥里充电站",
           operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
+          gunType: "快充枪",
+          voltage: "380",
+          current: "160",
           precision: "",
           meterNo: "",
-          power: "",
-          deviceNo: "",
+          runTime: "",
           updateTime: "",
           operatorUser: "",
         },
         {
+          gunCode: "G32010600981460-1",
           pileCode: "32010600981460",
           stationName: "同星东马坊充电站",
           operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
+          gunType: "快充枪",
+          voltage: "380",
+          current: "250",
+          precision: "0.2S",
+          meterNo: "DJ20260901003",
+          runTime: "2026-07-15",
           updateTime: "2026-09-01 06:50:30",
           operatorUser: "admin",
         },
         {
+          gunCode: "G32010600981459-1",
           pileCode: "32010600981459",
           stationName: "同星东马坊充电站",
           operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
+          gunType: "慢充枪",
+          voltage: "220",
+          current: "32",
+          precision: "0.5S",
           meterNo: "",
-          power: "",
-          deviceNo: "",
+          runTime: "",
           updateTime: "2026-09-01 06:50:30",
           operatorUser: "admin",
         },
         {
+          gunCode: "G32010600964370-1",
           pileCode: "32010600964370",
           stationName: "同星南桥里充电站",
           operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
+          gunType: "快充枪",
+          voltage: "380",
+          current: "180",
+          precision: "0.5S",
           meterNo: "",
-          power: "",
-          deviceNo: "",
+          runTime: "",
           updateTime: "2025-09-25 16:10:26",
           operatorUser: "admin",
         },
         {
+          gunCode: "G32010600964369-1",
           pileCode: "32010600964369",
           stationName: "同星南桥里充电站",
           operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
+          gunType: "慢充枪",
+          voltage: "220",
+          current: "32",
+          precision: "0.5S",
           meterNo: "",
-          power: "",
-          deviceNo: "",
+          runTime: "",
           updateTime: "2025-09-25 16:10:26",
           operatorUser: "admin",
         },
         {
+          gunCode: "G32010600832250-1",
           pileCode: "32010600832250",
           stationName: "同星旭智充站",
           operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
+          gunType: "快充枪",
+          voltage: "380",
+          current: "250",
           precision: "",
           meterNo: "",
-          power: "",
-          deviceNo: "",
+          runTime: "",
           updateTime: "",
           operatorUser: "",
         },
         {
+          gunCode: "G32010600832251-1",
           pileCode: "32010600832251",
           stationName: "同星旭智充站",
           operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
+          gunType: "快充枪",
+          voltage: "380",
+          current: "200",
+          precision: "0.2S",
+          meterNo: "DJ20260414004",
+          runTime: "2026-02-10",
           updateTime: "",
           operatorUser: "admin",
         },
       ],
       filterList: [],
       searchForm: {
+        gunCode: "",
         pileCode: "",
         stationName: "",
-        precision: "",
+        gunType: "",
       },
       currentPage: 1,
       pageSize: 10,
@@ -443,22 +473,29 @@ export default {
         this.toastShow = false;
       }, 1800);
     },
-    //筛选
     handleSearch() {
+      const gCode = this.searchForm.gunCode.trim();
       const pCode = this.searchForm.pileCode.trim();
       const sName = this.searchForm.stationName.trim();
-      const pre = this.searchForm.precision;
+      const gType = this.searchForm.gunType;
       this.filterList = this.sourceData.filter((row) => {
-        let matchPile = !pCode || row.pileCode.includes(pCode);
-        let matchStation = !sName || row.stationName.includes(sName);
-        let matchPrecision = !pre || row.precision === pre;
-        return matchPile && matchStation && matchPrecision;
+        return (
+          (!gCode || row.gunCode.includes(gCode)) &&
+          (!pCode || row.pileCode.includes(pCode)) &&
+          (!sName || row.stationName.includes(sName)) &&
+          (!gType || row.gunType === gType)
+        );
       });
       this.currentPage = 1;
       this.showToast("筛选完成");
     },
     resetFilter() {
-      this.searchForm = { pileCode: "", stationName: "", precision: "" };
+      this.searchForm = {
+        gunCode: "",
+        pileCode: "",
+        stationName: "",
+        gunType: "",
+      };
       this.filterList = [...this.sourceData];
       this.currentPage = 1;
       this.showToast("筛选条件已重置");
@@ -468,7 +505,6 @@ export default {
       p = Math.min(Math.max(1, p), this.totalPage);
       this.currentPage = p;
     },
-    //编辑
     openEdit(row) {
       this.editOriginRow = row;
       this.editForm = { ...row };
@@ -476,7 +512,7 @@ export default {
     },
     saveEdit() {
       const idx = this.sourceData.findIndex(
-        (x) => x.pileCode === this.editOriginRow.pileCode
+        (x) => x.gunCode === this.editOriginRow.gunCode
       );
       const now = new Date();
       const timeStr = `${now.getFullYear()}-${String(
@@ -495,18 +531,18 @@ export default {
       this.editVisible = false;
       this.showToast("保存成功！");
     },
-    //详情
     openDetail(row) {
       this.detailFields = [
-        { label: "电桩编号", value: row.pileCode },
+        { label: "枪编号", value: row.gunCode },
+        { label: "所属电桩", value: row.pileCode },
         { label: "电站名称", value: row.stationName },
         { label: "运营商名称", value: row.operator },
-        { label: "正式投运时间", value: row.runTime },
-        { label: "设备投资金额(元)", value: row.invest },
+        { label: "枪类型", value: row.gunType },
+        { label: "额定电压(V)", value: row.voltage },
+        { label: "额定电流(A)", value: row.current },
         { label: "计量精准度", value: row.precision },
-        { label: "电桩电表号", value: row.meterNo },
-        { label: "电桩功率(kw)", value: row.power },
-        { label: "设备号", value: row.deviceNo },
+        { label: "枪电表号", value: row.meterNo },
+        { label: "正式投运时间", value: row.runTime },
         { label: "更新时间", value: row.updateTime },
         { label: "操作人", value: row.operatorUser },
       ];
@@ -521,16 +557,13 @@ export default {
 </script>
 
 <style scoped>
-/* ================= 基础重置 ================= */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-/* ================= 容器 & 冷调主题变量 ================= */
-.pile-container {
-  /* 冷调清雅色板 · 白色底 */
+.gun-container {
   --bg: #ffffff;
   --card: #ffffff;
   --ink: #1f2a37;
@@ -539,10 +572,10 @@ export default {
   --ink-4: #c3ced9;
   --line: #e4eaf1;
   --line-2: #eef3f8;
-  --accent: #6b8fb0; /* 主色：柔和钢蓝 */
-  --accent-2: #4f7295; /* 主色加深 */
+  --accent: #6b8fb0;
+  --accent-2: #4f7295;
   --accent-soft: #e9f0f6;
-  --ice: #82a8c4; /* 辅色：冰蓝 */
+  --ice: #82a8c4;
   --ice-soft: #e8f2f8;
 
   min-height: 100vh;
@@ -558,7 +591,6 @@ export default {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ================= 面包屑 ================= */
 .breadcrumb {
   display: flex;
   align-items: center;
@@ -588,7 +620,6 @@ export default {
   background: var(--accent);
 }
 
-/* ================= 顶部功能按钮 ================= */
 .top-action-bar {
   display: flex;
   justify-content: flex-end;
@@ -634,7 +665,6 @@ export default {
   box-shadow: 0 10px 22px -10px rgba(94, 136, 171, 0.85);
 }
 
-/* ================= 提示栏 ================= */
 .tip-bar {
   position: relative;
   padding: 14px 20px 14px 48px;
@@ -670,7 +700,6 @@ export default {
   border-bottom-color: #3d5a77;
 }
 
-/* ================= 筛选卡片 ================= */
 .filter-card {
   padding: 24px 26px;
   margin-bottom: 18px;
@@ -780,7 +809,6 @@ export default {
   color: var(--accent-2);
 }
 
-/* ================= 表格卡片 ================= */
 .table-card {
   padding-bottom: 20px;
   background: var(--card);
@@ -838,7 +866,7 @@ export default {
 
 table {
   width: 100%;
-  min-width: 1350px;
+  min-width: 1450px;
   border-collapse: separate;
   border-spacing: 0;
 }
@@ -882,7 +910,25 @@ tbody tr:hover td {
   color: var(--ink);
 }
 
-/* 操作按钮 */
+.gun-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+}
+.gun-tag.fast {
+  color: #fff;
+  background: linear-gradient(135deg, #6b8fb0 0%, #4f7295 100%);
+  box-shadow: 0 4px 10px -4px rgba(79, 114, 149, 0.6);
+}
+.gun-tag.slow {
+  color: #4f7295;
+  background: var(--ice-soft);
+  border: 1px solid #cddfe9;
+}
+
 .operate {
   white-space: nowrap;
 }
@@ -911,7 +957,6 @@ tbody tr:hover td {
   background: var(--ice-soft);
 }
 
-/* ================= 分页 ================= */
 .pagination-wrap {
   display: flex;
   align-items: center;
@@ -1006,7 +1051,6 @@ tbody tr:hover td {
   border-color: var(--accent);
 }
 
-/* ================= 弹窗 ================= */
 .mask {
   position: fixed;
   inset: 0;
@@ -1062,7 +1106,6 @@ tbody tr:hover td {
   background: linear-gradient(180deg, var(--accent) 0%, var(--ice) 100%);
 }
 
-/* 表单 */
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1139,7 +1182,6 @@ tbody tr:hover td {
   transform: translateY(0);
 }
 
-/* 详情 */
 .detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1170,7 +1212,6 @@ tbody tr:hover td {
   word-break: break-all;
 }
 
-/* ================= Toast ================= */
 .toast {
   position: fixed;
   left: 50%;
@@ -1193,7 +1234,6 @@ tbody tr:hover td {
   animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ================= 动画 ================= */
 @keyframes modalIn {
   from {
     opacity: 0;
@@ -1215,9 +1255,8 @@ tbody tr:hover td {
   }
 }
 
-/* ================= 响应式 ================= */
 @media (max-width: 1024px) {
-  .pile-container {
+  .gun-container {
     padding: 24px 22px 48px;
   }
   .form-grid,
@@ -1226,7 +1265,7 @@ tbody tr:hover td {
   }
 }
 @media (max-width: 640px) {
-  .pile-container {
+  .gun-container {
     padding: 20px 16px 40px;
   }
   .breadcrumb {

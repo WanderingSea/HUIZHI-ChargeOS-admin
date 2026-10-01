@@ -1,27 +1,17 @@
 <template>
   <div class="pile-container">
-    <!--面包屑-->
     <div class="breadcrumb">
-      电站电桩 <span class="div">></span> 电桩监管信息登记
+      电站电桩 <span class="div">></span> 充电桩管理
       <span class="div">></span>
-      <strong>电桩监管信息登记列表</strong>
+      <strong>充电桩列表</strong>
     </div>
     <div class="top-action-bar">
-      <button class="btn-top btn-blue" @click="showToast('批量更新')">
-        批量更新
-      </button>
+      <button class="btn-top btn-blue" @click="openAdd">新增电桩</button>
       <button class="btn-top btn-green" @click="showToast('导出文件开始下载')">
         导出
       </button>
     </div>
 
-    <!--提示栏-->
-    <div class="tip-bar">
-      温馨提示：请根据所在地区监管部门要求提报的信息仔细填写，平台不对信息的准确性负责。
-      <a @click="showToast('打开填写指引弹窗')">【查看填写指引】</a>
-    </div>
-
-    <!--筛选区域-->
     <div class="filter-card">
       <div class="filter-row">
         <div class="filter-item">
@@ -36,11 +26,16 @@
           />
         </div>
         <div class="filter-item">
-          <label>计量精准度</label>
-          <select v-model="searchForm.precision">
-            <option value="">请选择计量精准度</option>
-            <option value="0.5S">0.5S</option>
-            <option value="0.2S">0.2S</option>
+          <label>品牌型号</label>
+          <input v-model="searchForm.model" placeholder="请输入品牌或型号" />
+        </div>
+        <div class="filter-item">
+          <label>运行状态</label>
+          <select v-model="searchForm.status">
+            <option value="">全部</option>
+            <option value="在线">在线</option>
+            <option value="离线">离线</option>
+            <option value="故障">故障</option>
           </select>
         </div>
         <div class="filter-buttons">
@@ -48,37 +43,31 @@
           <button class="btn-reset" @click="resetFilter">恢复默认</button>
         </div>
       </div>
-      <div class="more-filter" @click="showToast('展开更多筛选条件')">
-        更多筛选 ∨
-      </div>
     </div>
 
-    <!--表格区域-->
     <div class="table-card">
-      <div class="table-title">电桩监管信息登记列表</div>
+      <div class="table-title">充电桩列表</div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
               <th>电桩编号</th>
               <th>电站名称</th>
-              <th>运营商名称</th>
-              <th>正式投运时间</th>
-              <th>设备投资金额(元)</th>
-              <th>计量精准度</th>
-              <th>电桩电表号</th>
-              <th>电桩功率(kw)</th>
-              <th>设备号</th>
-              <th>更新时间</th>
-              <th>操作人</th>
+              <th>品牌型号</th>
+              <th>功率(kw)</th>
+              <th>枪数</th>
+              <th>生产厂商</th>
+              <th>投运时间</th>
+              <th>运行状态</th>
+              <th>创建时间</th>
               <th>操作</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="pageData.length === 0">
               <td
-                colspan="12"
-                style="text-align: center; padding: 30px; color: #6b7280"
+                colspan="10"
+                style="text-align: center; padding: 30px; color: #94a3b3"
               >
                 暂无数据
               </td>
@@ -86,20 +75,23 @@
             <tr v-else v-for="item in pageData" :key="item.pileCode">
               <td>{{ item.pileCode }}</td>
               <td>{{ item.stationName }}</td>
-              <td>{{ item.operator }}</td>
+              <td>{{ item.model }}</td>
+              <td>{{ item.power }}</td>
+              <td>{{ item.gunCount }}</td>
+              <td>{{ item.vendor }}</td>
               <td>{{ item.runTime || "——" }}</td>
-              <td>{{ item.invest || "——" }}</td>
-              <td>{{ item.precision || "——" }}</td>
-              <td>{{ item.meterNo || "——" }}</td>
-              <td>{{ item.power || "——" }}</td>
-              <td>{{ item.deviceNo || "——" }}</td>
-              <td>{{ item.updateTime || "——" }}</td>
-              <td>{{ item.operatorUser || "——" }}</td>
+              <td>
+                <span :class="['status-tag', statusClass(item.status)]">
+                  {{ item.status }}
+                </span>
+              </td>
+              <td>{{ item.createTime }}</td>
               <td class="operate">
                 <button class="btn-edit" @click="openEdit(item)">编辑</button>
                 <button class="btn-detail" @click="openDetail(item)">
                   详情
                 </button>
+                <button class="btn-del" @click="openDelete(item)">删除</button>
               </td>
             </tr>
           </tbody>
@@ -113,7 +105,7 @@
         >
           上一页
         </button>
-        <span id="pageBox">
+        <span>
           <span
             class="page-num"
             :class="{ active: currentPage === i }"
@@ -147,54 +139,53 @@
       </div>
     </div>
 
-    <!--编辑弹窗-->
     <div
       class="mask"
       :class="{ show: editVisible }"
       @click="handleMaskClose('edit')"
     >
       <div class="modal" @click.stop>
-        <div class="modal-header">编辑电桩监管信息</div>
+        <div class="modal-header">{{ isAdd ? "新增电桩" : "编辑电桩" }}</div>
         <div class="form-grid">
           <div class="form-item">
             <label>电桩编号</label>
-            <input v-model="editForm.pileCode" />
+            <input v-model="editForm.pileCode" :disabled="!isAdd" />
           </div>
           <div class="form-item">
             <label>电站名称</label>
             <input v-model="editForm.stationName" />
           </div>
           <div class="form-item">
-            <label>运营商名称</label>
-            <input v-model="editForm.operator" />
+            <label>品牌</label>
+            <input v-model="editForm.brand" />
           </div>
           <div class="form-item">
-            <label>正式投运时间</label>
+            <label>型号</label>
+            <input v-model="editForm.model" />
+          </div>
+          <div class="form-item">
+            <label>功率(kw)</label>
+            <input v-model="editForm.power" type="number" />
+          </div>
+          <div class="form-item">
+            <label>枪数</label>
+            <input v-model="editForm.gunCount" type="number" />
+          </div>
+          <div class="form-item">
+            <label>生产厂商</label>
+            <input v-model="editForm.vendor" />
+          </div>
+          <div class="form-item">
+            <label>投运时间</label>
             <input v-model="editForm.runTime" type="date" />
           </div>
           <div class="form-item">
-            <label>设备投资金额(元)</label>
-            <input v-model="editForm.invest" />
-          </div>
-          <div class="form-item">
-            <label>计量精准度</label>
-            <select v-model="editForm.precision">
-              <option value="">--请选择--</option>
-              <option value="0.2S">0.2S</option>
-              <option value="0.5S">0.5S</option>
+            <label>运行状态</label>
+            <select v-model="editForm.status">
+              <option value="在线">在线</option>
+              <option value="离线">离线</option>
+              <option value="故障">故障</option>
             </select>
-          </div>
-          <div class="form-item">
-            <label>电桩电表号</label>
-            <input v-model="editForm.meterNo" />
-          </div>
-          <div class="form-item">
-            <label>电桩功率(kw)</label>
-            <input v-model="editForm.power" />
-          </div>
-          <div class="form-item">
-            <label>设备号</label>
-            <input v-model="editForm.deviceNo" />
           </div>
         </div>
         <div class="modal-footer">
@@ -204,14 +195,13 @@
       </div>
     </div>
 
-    <!--详情弹窗-->
     <div
       class="mask"
       :class="{ show: detailVisible }"
       @click="handleMaskClose('detail')"
     >
       <div class="modal" @click.stop>
-        <div class="modal-header">电桩监管信息详情</div>
+        <div class="modal-header">电桩详情</div>
         <div class="detail-grid">
           <div
             class="detail-item"
@@ -230,189 +220,200 @@
       </div>
     </div>
 
+    <div class="mask" :class="{ show: delVisible }" @click="delVisible = false">
+      <div class="modal" @click.stop>
+        <div class="modal-header">确认删除</div>
+        <p class="del-tip">
+          确定要删除电桩
+          <strong>{{ deleteTarget && deleteTarget.pileCode }}</strong>
+          吗？此操作不可恢复。
+        </p>
+        <div class="modal-footer">
+          <button class="cancel-btn" @click="delVisible = false">取消</button>
+          <button
+            class="save-btn"
+            style="
+              background: linear-gradient(135deg, #f53f3f 0%, #c93030 100%);
+            "
+            @click="confirmDelete"
+          >
+            删除
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="toast" :class="{ show: toastShow }">{{ toastMsg }}</div>
   </div>
 </template>
 
 <script>
 export default {
-  name: "PileRegisterList",
+  name: "ChargePile",
   data() {
     return {
       sourceData: [
         {
           pileCode: "32010600832249",
           stationName: "同星旭智充站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "",
-          operatorUser: "",
+          brand: "星星充电",
+          model: "XX-DC-60KW",
+          power: "60",
+          gunCount: 2,
+          vendor: "星星充电科技",
+          runTime: "2024-06-15",
+          status: "在线",
+          createTime: "2024-06-15 10:22:31",
         },
         {
           pileCode: "32010600832248",
           stationName: "同星旭智充站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "",
-          operatorUser: "",
+          brand: "星星充电",
+          model: "XX-DC-60KW",
+          power: "60",
+          gunCount: 2,
+          vendor: "星星充电科技",
+          runTime: "2024-06-15",
+          status: "离线",
+          createTime: "2024-06-15 10:22:31",
         },
         {
           pileCode: "32010601174425",
           stationName: "同星东马坊充电站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "2026-04-14 09:37:56",
-          operatorUser: "admin",
+          brand: "特来电",
+          model: "TL-DC-120KW",
+          power: "120",
+          gunCount: 2,
+          vendor: "特来电新能源",
+          runTime: "2025-03-20",
+          status: "在线",
+          createTime: "2025-03-20 09:11:02",
         },
         {
           pileCode: "32010601129513",
           stationName: "同星东马坊充电站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "",
-          operatorUser: "",
+          brand: "特来电",
+          model: "TL-DC-120KW",
+          power: "120",
+          gunCount: 2,
+          vendor: "特来电新能源",
+          runTime: "2025-03-20",
+          status: "故障",
+          createTime: "2025-03-20 09:11:02",
         },
         {
           pileCode: "32010601047756",
           stationName: "同星东马坊充电站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "2025-12-03 17:09:44",
-          operatorUser: "admin",
+          brand: "国家电网",
+          model: "SG-AC-7KW",
+          power: "7",
+          gunCount: 1,
+          vendor: "国电南瑞",
+          runTime: "2024-11-08",
+          status: "在线",
+          createTime: "2024-11-08 14:30:15",
         },
         {
           pileCode: "32010600832246",
           stationName: "同星南桥里充电站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "",
-          operatorUser: "",
+          brand: "星星充电",
+          model: "XX-DC-30KW",
+          power: "30",
+          gunCount: 1,
+          vendor: "星星充电科技",
+          runTime: "2024-07-22",
+          status: "在线",
+          createTime: "2024-07-22 16:45:08",
         },
         {
           pileCode: "32010600981460",
           stationName: "同星东马坊充电站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "2026-09-01 06:50:30",
-          operatorUser: "admin",
+          brand: "特来电",
+          model: "TL-DC-180KW",
+          power: "180",
+          gunCount: 2,
+          vendor: "特来电新能源",
+          runTime: "2026-01-10",
+          status: "在线",
+          createTime: "2026-01-10 11:20:00",
         },
         {
           pileCode: "32010600981459",
           stationName: "同星东马坊充电站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "2026-09-01 06:50:30",
-          operatorUser: "admin",
+          brand: "国家电网",
+          model: "SG-AC-7KW",
+          power: "7",
+          gunCount: 1,
+          vendor: "国电南瑞",
+          runTime: "2026-01-10",
+          status: "离线",
+          createTime: "2026-01-10 11:20:00",
         },
         {
           pileCode: "32010600964370",
           stationName: "同星南桥里充电站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "2025-09-25 16:10:26",
-          operatorUser: "admin",
+          brand: "星星充电",
+          model: "XX-DC-60KW",
+          power: "60",
+          gunCount: 2,
+          vendor: "星星充电科技",
+          runTime: "2025-09-01",
+          status: "在线",
+          createTime: "2025-09-01 08:55:41",
         },
         {
           pileCode: "32010600964369",
           stationName: "同星南桥里充电站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "2025-09-25 16:10:26",
-          operatorUser: "admin",
+          brand: "星星充电",
+          model: "XX-DC-60KW",
+          power: "60",
+          gunCount: 2,
+          vendor: "星星充电科技",
+          runTime: "2025-09-01",
+          status: "在线",
+          createTime: "2025-09-01 08:55:41",
         },
         {
           pileCode: "32010600832250",
           stationName: "同星旭智充站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "",
-          operatorUser: "",
+          brand: "特来电",
+          model: "TL-DC-240KW",
+          power: "240",
+          gunCount: 4,
+          vendor: "特来电新能源",
+          runTime: "2026-04-18",
+          status: "在线",
+          createTime: "2026-04-18 13:12:20",
         },
         {
           pileCode: "32010600832251",
           stationName: "同星旭智充站",
-          operator: "新乡市牧野区同星机械有限公司",
-          runTime: "",
-          invest: "",
-          precision: "",
-          meterNo: "",
-          power: "",
-          deviceNo: "",
-          updateTime: "",
-          operatorUser: "admin",
+          brand: "特来电",
+          model: "TL-DC-240KW",
+          power: "240",
+          gunCount: 4,
+          vendor: "特来电新能源",
+          runTime: "2026-04-18",
+          status: "在线",
+          createTime: "2026-04-18 13:12:20",
         },
       ],
       filterList: [],
-      searchForm: {
-        pileCode: "",
-        stationName: "",
-        precision: "",
-      },
+      searchForm: { pileCode: "", stationName: "", model: "", status: "" },
       currentPage: 1,
       pageSize: 10,
       jumpPage: 1,
 
       editVisible: false,
+      isAdd: false,
       editForm: {},
       editOriginRow: null,
 
       detailVisible: false,
       detailFields: [],
+
+      delVisible: false,
+      deleteTarget: null,
 
       toastShow: false,
       toastMsg: "",
@@ -443,22 +444,47 @@ export default {
         this.toastShow = false;
       }, 1800);
     },
-    //筛选
+    statusClass(s) {
+      return (
+        { 在线: "tag-online", 离线: "tag-offline", 故障: "tag-error" }[s] ||
+        "tag-offline"
+      );
+    },
+    nowStr() {
+      const n = new Date();
+      return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}-${String(n.getDate()).padStart(2, "0")} ${String(
+        n.getHours()
+      ).padStart(2, "0")}:${String(n.getMinutes()).padStart(2, "0")}:${String(
+        n.getSeconds()
+      ).padStart(2, "0")}`;
+    },
     handleSearch() {
-      const pCode = this.searchForm.pileCode.trim();
-      const sName = this.searchForm.stationName.trim();
-      const pre = this.searchForm.precision;
-      this.filterList = this.sourceData.filter((row) => {
-        let matchPile = !pCode || row.pileCode.includes(pCode);
-        let matchStation = !sName || row.stationName.includes(sName);
-        let matchPrecision = !pre || row.precision === pre;
-        return matchPile && matchStation && matchPrecision;
-      });
+      const p = this.searchForm.pileCode.trim();
+      const s = this.searchForm.stationName.trim();
+      const m = this.searchForm.model.trim();
+      const st = this.searchForm.status;
+      this.filterList = this.sourceData.filter(
+        (r) =>
+          (!p || r.pileCode.includes(p)) &&
+          (!s || r.stationName.includes(s)) &&
+          (!m ||
+            (r.brand && r.brand.includes(m)) ||
+            (r.model && r.model.includes(m))) &&
+          (!st || r.status === st)
+      );
       this.currentPage = 1;
       this.showToast("筛选完成");
     },
     resetFilter() {
-      this.searchForm = { pileCode: "", stationName: "", precision: "" };
+      this.searchForm = {
+        pileCode: "",
+        stationName: "",
+        model: "",
+        status: "",
+      };
       this.filterList = [...this.sourceData];
       this.currentPage = 1;
       this.showToast("筛选条件已重置");
@@ -468,49 +494,69 @@ export default {
       p = Math.min(Math.max(1, p), this.totalPage);
       this.currentPage = p;
     },
-    //编辑
+    openAdd() {
+      this.isAdd = true;
+      this.editForm = {
+        pileCode: "",
+        stationName: "",
+        brand: "",
+        model: "",
+        power: "",
+        gunCount: "",
+        vendor: "",
+        runTime: "",
+        status: "在线",
+      };
+      this.editVisible = true;
+    },
     openEdit(row) {
+      this.isAdd = false;
       this.editOriginRow = row;
       this.editForm = { ...row };
       this.editVisible = true;
     },
     saveEdit() {
-      const idx = this.sourceData.findIndex(
-        (x) => x.pileCode === this.editOriginRow.pileCode
-      );
-      const now = new Date();
-      const timeStr = `${now.getFullYear()}-${String(
-        now.getMonth() + 1
-      ).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(
-        now.getHours()
-      ).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(
-        now.getSeconds()
-      ).padStart(2, "0")}`;
-      this.sourceData[idx] = {
-        ...this.editForm,
-        updateTime: timeStr,
-        operatorUser: "admin",
-      };
+      if (this.isAdd) {
+        this.sourceData.unshift({
+          ...this.editForm,
+          createTime: this.nowStr(),
+        });
+      } else {
+        const idx = this.sourceData.findIndex(
+          (x) => x.pileCode === this.editOriginRow.pileCode
+        );
+        this.sourceData[idx] = { ...this.editForm };
+      }
       this.filterList = [...this.sourceData];
       this.editVisible = false;
-      this.showToast("保存成功！");
+      this.showToast(this.isAdd ? "新增成功！" : "保存成功！");
     },
-    //详情
     openDetail(row) {
       this.detailFields = [
         { label: "电桩编号", value: row.pileCode },
         { label: "电站名称", value: row.stationName },
-        { label: "运营商名称", value: row.operator },
-        { label: "正式投运时间", value: row.runTime },
-        { label: "设备投资金额(元)", value: row.invest },
-        { label: "计量精准度", value: row.precision },
-        { label: "电桩电表号", value: row.meterNo },
-        { label: "电桩功率(kw)", value: row.power },
-        { label: "设备号", value: row.deviceNo },
-        { label: "更新时间", value: row.updateTime },
-        { label: "操作人", value: row.operatorUser },
+        { label: "品牌", value: row.brand },
+        { label: "型号", value: row.model },
+        { label: "功率(kw)", value: row.power },
+        { label: "枪数", value: row.gunCount },
+        { label: "生产厂商", value: row.vendor },
+        { label: "投运时间", value: row.runTime },
+        { label: "运行状态", value: row.status },
+        { label: "创建时间", value: row.createTime },
       ];
       this.detailVisible = true;
+    },
+    openDelete(row) {
+      this.deleteTarget = row;
+      this.delVisible = true;
+    },
+    confirmDelete() {
+      this.sourceData = this.sourceData.filter(
+        (x) => x.pileCode !== this.deleteTarget.pileCode
+      );
+      this.filterList = [...this.sourceData];
+      this.delVisible = false;
+      this.showToast("删除成功！");
     },
     handleMaskClose(type) {
       if (type === "edit") this.editVisible = false;
@@ -521,16 +567,12 @@ export default {
 </script>
 
 <style scoped>
-/* ================= 基础重置 ================= */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
-
-/* ================= 容器 & 冷调主题变量 ================= */
 .pile-container {
-  /* 冷调清雅色板 · 白色底 */
   --bg: #ffffff;
   --card: #ffffff;
   --ink: #1f2a37;
@@ -539,12 +581,11 @@ export default {
   --ink-4: #c3ced9;
   --line: #e4eaf1;
   --line-2: #eef3f8;
-  --accent: #6b8fb0; /* 主色：柔和钢蓝 */
-  --accent-2: #4f7295; /* 主色加深 */
+  --accent: #6b8fb0;
+  --accent-2: #4f7295;
   --accent-soft: #e9f0f6;
-  --ice: #82a8c4; /* 辅色：冰蓝 */
+  --ice: #82a8c4;
   --ice-soft: #e8f2f8;
-
   min-height: 100vh;
   padding: 32px 40px 64px;
   background-color: var(--bg);
@@ -557,8 +598,6 @@ export default {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
-/* ================= 面包屑 ================= */
 .breadcrumb {
   display: flex;
   align-items: center;
@@ -587,8 +626,6 @@ export default {
   border-radius: 50%;
   background: var(--accent);
 }
-
-/* ================= 顶部功能按钮 ================= */
 .top-action-bar {
   display: flex;
   justify-content: flex-end;
@@ -633,44 +670,6 @@ export default {
   transform: translateY(-1px);
   box-shadow: 0 10px 22px -10px rgba(94, 136, 171, 0.85);
 }
-
-/* ================= 提示栏 ================= */
-.tip-bar {
-  position: relative;
-  padding: 14px 20px 14px 48px;
-  margin-bottom: 20px;
-  font-size: 13px;
-  line-height: 1.75;
-  color: #4f7295;
-  background: linear-gradient(135deg, #f3f8fc 0%, #eef6fb 100%);
-  border: 1px solid #dceaf4;
-  border-radius: 14px;
-}
-.tip-bar::before {
-  content: "";
-  position: absolute;
-  left: 22px;
-  top: 20px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--ice);
-  box-shadow: 0 0 0 4px rgba(130, 168, 196, 0.18);
-}
-.tip-bar a {
-  color: var(--accent-2);
-  font-weight: 500;
-  cursor: pointer;
-  text-decoration: none;
-  border-bottom: 1px dashed rgba(79, 114, 149, 0.5);
-  transition: all 0.2s ease;
-}
-.tip-bar a:hover {
-  color: #3d5a77;
-  border-bottom-color: #3d5a77;
-}
-
-/* ================= 筛选卡片 ================= */
 .filter-card {
   padding: 24px 26px;
   margin-bottom: 18px;
@@ -764,23 +763,6 @@ export default {
   background: var(--accent-soft);
   border-color: var(--accent);
 }
-.more-filter {
-  width: fit-content;
-  margin: 16px auto 0;
-  padding: 6px 16px;
-  font-size: 13px;
-  color: var(--accent);
-  border-radius: 999px;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-.more-filter:hover {
-  background: var(--accent-soft);
-  color: var(--accent-2);
-}
-
-/* ================= 表格卡片 ================= */
 .table-card {
   padding-bottom: 20px;
   background: var(--card);
@@ -817,7 +799,6 @@ export default {
   height: 1px;
   background: var(--line-2);
 }
-
 .table-wrap {
   overflow-x: auto;
   padding: 0 14px;
@@ -825,25 +806,15 @@ export default {
 .table-wrap::-webkit-scrollbar {
   height: 8px;
 }
-.table-wrap::-webkit-scrollbar-track {
-  background: transparent;
-}
 .table-wrap::-webkit-scrollbar-thumb {
   background: #d3dde6;
   border-radius: 4px;
 }
-.table-wrap::-webkit-scrollbar-thumb:hover {
-  background: #bccad6;
-}
-
 table {
   width: 100%;
-  min-width: 1350px;
+  min-width: 1200px;
   border-collapse: separate;
   border-spacing: 0;
-}
-thead tr {
-  background: transparent;
 }
 thead th {
   padding: 12px 14px;
@@ -865,7 +836,6 @@ thead th:last-child {
   border-radius: 0 10px 10px 0;
   border-right: 1px solid var(--line-2);
 }
-
 tbody td {
   padding: 16px 14px;
   font-size: 13px;
@@ -881,8 +851,29 @@ tbody tr:hover td {
   background: #f7fbfe;
   color: var(--ink);
 }
-
-/* 操作按钮 */
+.status-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+}
+.tag-online {
+  color: #fff;
+  background: linear-gradient(135deg, #6b8fb0 0%, #4f7295 100%);
+  box-shadow: 0 4px 10px -4px rgba(79, 114, 149, 0.6);
+}
+.tag-offline {
+  color: var(--accent-2);
+  background: var(--ice-soft);
+  border: 1px solid #cddfe9;
+}
+.tag-error {
+  color: #fff;
+  background: linear-gradient(135deg, #f53f3f 0%, #c93030 100%);
+  box-shadow: 0 4px 10px -4px rgba(245, 63, 63, 0.6);
+}
 .operate {
   white-space: nowrap;
 }
@@ -910,8 +901,12 @@ tbody tr:hover td {
 .btn-detail:hover {
   background: var(--ice-soft);
 }
-
-/* ================= 分页 ================= */
+.btn-del {
+  color: #f53f3f;
+}
+.btn-del:hover {
+  background: rgba(245, 63, 63, 0.08);
+}
 .pagination-wrap {
   display: flex;
   align-items: center;
@@ -1005,8 +1000,6 @@ tbody tr:hover td {
   background: #fff;
   border-color: var(--accent);
 }
-
-/* ================= 弹窗 ================= */
 .mask {
   position: fixed;
   inset: 0;
@@ -1061,8 +1054,6 @@ tbody tr:hover td {
   border-radius: 2px;
   background: linear-gradient(180deg, var(--accent) 0%, var(--ice) 100%);
 }
-
-/* 表单 */
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1088,6 +1079,11 @@ tbody tr:hover td {
   border-radius: 10px;
   transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
+.form-item input:disabled {
+  background: #eef1f5;
+  color: var(--ink-3);
+  cursor: not-allowed;
+}
 .form-item input:focus,
 .form-item select:focus {
   outline: none;
@@ -1095,7 +1091,6 @@ tbody tr:hover td {
   border-color: var(--accent);
   box-shadow: 0 0 0 4px rgba(107, 143, 176, 0.12);
 }
-
 .modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -1138,8 +1133,15 @@ tbody tr:hover td {
 .save-btn:active {
   transform: translateY(0);
 }
-
-/* 详情 */
+.del-tip {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.7;
+  margin-bottom: 4px;
+}
+.del-tip strong {
+  color: #f53f3f;
+}
 .detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1169,8 +1171,6 @@ tbody tr:hover td {
   color: var(--ink);
   word-break: break-all;
 }
-
-/* ================= Toast ================= */
 .toast {
   position: fixed;
   left: 50%;
@@ -1192,8 +1192,6 @@ tbody tr:hover td {
   display: block;
   animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
-/* ================= 动画 ================= */
 @keyframes modalIn {
   from {
     opacity: 0;
@@ -1214,8 +1212,6 @@ tbody tr:hover td {
     transform: translate(-50%, 0);
   }
 }
-
-/* ================= 响应式 ================= */
 @media (max-width: 1024px) {
   .pile-container {
     padding: 24px 22px 48px;
@@ -1228,9 +1224,6 @@ tbody tr:hover td {
 @media (max-width: 640px) {
   .pile-container {
     padding: 20px 16px 40px;
-  }
-  .breadcrumb {
-    gap: 6px;
   }
   .filter-item input,
   .filter-item select {
