@@ -148,12 +148,12 @@ export const staticMenuRoutes = [
     redirect: "/org/dept",
     meta: { title: "组织与权限", icon: "peoples" },
     children: [
-      {
-        path: "dept",
-        component: Placeholder,
-        name: "OrgDept",
-        meta: { title: "机构管理", icon: "tree" },
-      },
+      // {
+      //   path: "dept",
+      //   component: Placeholder,
+      //   name: "OrgDept",
+      //   meta: { title: "机构管理", icon: "tree" },
+      // },
       {
         path: "internal-user",
         component: Placeholder,
