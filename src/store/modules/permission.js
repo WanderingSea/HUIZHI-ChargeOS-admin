@@ -7,6 +7,17 @@ import router, {
 import Layout from "@/layout/index";
 import ParentView from "@/components/ParentView";
 import InnerLink from "@/layout/components/InnerLink";
+import { getRouters, listMenu } from "@/api/menu";
+
+// 源码项目（后端 sys_menu 菜单表）中原来的主菜单栏
+const ORIGIN_MENU_TITLES = [
+  "运营管理",
+  "系统管理",
+  "系统监控",
+  "系统工具",
+  "Demo模块",
+  "定时任务",
+];
 
 function deepClone(obj, hash = new WeakMap()) {
   if (obj === null || typeof obj !== "object") return obj;
@@ -31,6 +42,7 @@ const permission = {
     defaultRoutes: [],
     topbarRouters: [],
     sidebarRouters: [],
+    originRouters: [],
   },
   mutations: {
     SET_ROUTES: (state, routes) => {
@@ -45,6 +57,9 @@ const permission = {
     },
     SET_SIDEBAR_ROUTERS: (state, routes) => {
       state.sidebarRouters = routes;
+    },
+    SET_ORIGIN_ROUTERS: (state, routes) => {
+      state.originRouters = routes;
     },
   },
   actions: {
@@ -71,11 +86,124 @@ const permission = {
         commit("SET_SIDEBAR_ROUTERS", constantRoutes.concat(sidebarRoutes));
         commit("SET_DEFAULT_ROUTES", sidebarRoutes);
         commit("SET_TOPBAR_ROUTES", topbarRoutes);
-        resolve(rewriteRoutes);
+        // 源码项目中的原始菜单（来自后端 sys_menu），单独注册并保存，供顶部“原始菜单”下拉使用
+        loadOriginRoutes()
+          .then((originRoutes) => {
+            commit("SET_ORIGIN_ROUTERS", originRoutes);
+          })
+          .finally(() => {
+            resolve(rewriteRoutes);
+          });
       });
     },
   },
 };
+
+// 读取后端菜单表（sys_menu）中原来的主菜单栏，并注册其路由
+async function loadOriginRoutes() {
+  try {
+    // 优先用菜单列表接口：开发级管理员(userType=1)会返回全部菜单，不受角色关联(sys_role_menu)限制
+    const flatMenus = await loadAllFlatMenus();
+    if (flatMenus.length) {
+      const originMenus = buildMenuTree(flatMenus)
+        .filter((menu) => ORIGIN_MENU_TITLES.indexOf(menu.menuName) !== -1)
+        .map((menu) => toOriginRouter(menu, true));
+      if (originMenus.length) {
+        return registerOriginRoutes(originMenus);
+      }
+    }
+    // 退回按角色可见的 getRouters 结果
+    const res = await getRouters();
+    const routers = (res && res.data) || [];
+    const fallbackMenus = routers.filter(
+      (menu) => menu.meta && ORIGIN_MENU_TITLES.indexOf(menu.meta.title) !== -1
+    );
+    return registerOriginRoutes(fallbackMenus);
+  } catch (e) {
+    return [];
+  }
+}
+
+// 获取菜单表的扁平数据，接口不可用（无权限/异常）时返回空并退回 getRouters
+async function loadAllFlatMenus() {
+  try {
+    const res = await listMenu();
+    return (res && res.data) || [];
+  } catch (e) {
+    console.warn("[原始菜单] /system/menu/list 获取失败，退回 getRouters", e);
+    return [];
+  }
+}
+
+// 把扁平菜单行按 parent_id 组装成树（忽略按钮）
+function buildMenuTree(list) {
+  const nodeMap = new Map();
+  const tree = [];
+  list.forEach((item) => {
+    if (item.menuType === "M" || item.menuType === "C") {
+      nodeMap.set(item.menuId, Object.assign({}, item, { children: [] }));
+    }
+  });
+  nodeMap.forEach((node) => {
+    const parent = nodeMap.get(node.parentId);
+    if (parent) {
+      parent.children.push(node);
+    } else {
+      tree.push(node);
+    }
+  });
+  return tree;
+}
+
+// 对齐后端 buildMenus 的规则，把菜单行转成前端路由
+function toOriginRouter(menu, isTop) {
+  const isDir = menu.menuType === "M";
+  const path = String(menu.path || "").replace(/^\/+/, "");
+  const children = (menu.children || []).map((child) =>
+    toOriginRouter(child, false)
+  );
+  const route = {
+    path: isTop && isDir ? "/" + path : path,
+    name: path ? path.charAt(0).toUpperCase() + path.slice(1) : "",
+    hidden: menu.visible === "1",
+    component: isDir ? (isTop ? "Layout" : "ParentView") : menu.component,
+    meta: { title: menu.menuName, icon: menu.icon },
+  };
+  if (children.length) {
+    route.children = children;
+    if (isDir) {
+      route.alwaysShow = true;
+      route.redirect = "noRedirect";
+    }
+  }
+  return route;
+}
+
+// 注册原始菜单路由，并返回用于顶部下拉与侧边栏展示的层级菜单
+function registerOriginRoutes(originMenus) {
+  if (!originMenus || originMenus.length === 0) {
+    return [];
+  }
+  // 保留层级的菜单，用于顶部下拉与侧边栏展示
+  const nestedRoutes = filterAsyncRouter(deepClone(originMenus), false, false);
+  // 扁平化后的路由，用于注册到 router，保证子菜单可正常跳转
+  const registeredRoutes = filterAsyncRouter(deepClone(originMenus), false, true);
+  removeNoRedirect(registeredRoutes);
+  router.addRoutes(registeredRoutes);
+  return nestedRoutes;
+}
+
+// 后端父级菜单 redirect 为 noRedirect，注册前移除，避免路由解析异常
+function removeNoRedirect(routes) {
+  routes.forEach((route) => {
+    if (route.redirect === "noRedirect") {
+      delete route.redirect;
+    }
+    if (route.children && route.children.length) {
+      removeNoRedirect(route.children);
+    }
+  });
+}
 
 // 遍历后台传来的路由字符串，转换为组件对象
 function filterAsyncRouter(asyncRouterMap, lastRouter = false, type = false) {
@@ -95,7 +223,13 @@ function filterAsyncRouter(asyncRouterMap, lastRouter = false, type = false) {
       } else if (route.component === "InnerLink") {
         route.component = InnerLink;
       } else if (typeof route.component === "string") {
-        route.component = loadView(route.component);
+        try {
+          route.component = loadView(route.component);
+        } catch (e) {
+          // 视图文件不存在时跳过该菜单，避免影响其它原始菜单注册
+          console.warn("[原始菜单] 视图不存在，已跳过：", route.component);
+          return false;
+        }
       }
     }
     if (route.children != null && route.children && route.children.length) {
