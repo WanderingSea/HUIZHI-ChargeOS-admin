@@ -43,7 +43,7 @@
           />
         </el-input>
       </el-form-item>
-      <el-form-item prop="code">
+      <el-form-item v-if="captchaEnabled" prop="code">
         <el-input
           v-model="loginForm.code"
           auto-complete="off"
@@ -99,6 +99,7 @@ export default {
     return {
       logo: logoImg,
       codeUrl: "",
+      captchaEnabled: false,
       loginForm: {
         phone: "",
         password: "",
@@ -118,7 +119,6 @@ export default {
         password: [
           { required: true, trigger: "blur", message: "请输入您的密码" },
         ],
-        code: [{ required: true, trigger: "change", message: "请输入验证码" }],
       },
       loading: false,
       redirect: undefined,
@@ -134,14 +134,24 @@ export default {
   },
   created() {
     this.getCookie();
-    this.refreshCode();
+    this.getCodeImg();
   },
   methods: {
-    refreshCode() {
+    getCodeImg() {
       getCodeImg().then((res) => {
-        this.codeUrl = "data:image/gif;base64," + res.img;
-        this.loginForm.uuid = res.uuid;
+        this.captchaEnabled =
+          res.captchaEnabled === undefined ? false : res.captchaEnabled;
+        if (this.captchaEnabled) {
+          this.codeUrl = "data:image/gif;base64," + res.img;
+          this.loginForm.uuid = res.uuid;
+        }
       });
+    },
+    refreshCode() {
+      if (!this.captchaEnabled) {
+        return;
+      }
+      this.getCodeImg();
     },
     getCookie() {
       const phone = Cookies.get("phone");
@@ -180,7 +190,15 @@ export default {
               uuid: this.loginForm.uuid,
             })
             .then(() => {
-              this.$router.push({ path: this.redirect || "/" }).catch(() => {});
+              // 避免 redirect 指向已失效/不存在的路径导致 404，统一进入工作台
+              const target =
+                this.redirect &&
+                this.redirect !== "/" &&
+                this.redirect !== "/404" &&
+                this.redirect.startsWith("/workbench")
+                  ? this.redirect
+                  : "/workbench/overview";
+              this.$router.push({ path: target }).catch(() => {});
             })
             .catch(() => {
               this.loading = false;
