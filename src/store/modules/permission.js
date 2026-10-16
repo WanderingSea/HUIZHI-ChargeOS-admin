@@ -7,7 +7,7 @@ import router, {
 import Layout from "@/layout/index";
 import ParentView from "@/components/ParentView";
 import InnerLink from "@/layout/components/InnerLink";
-import { getRouters, listMenu } from "@/api/menu";
+import { getRouters } from "@/api/menu";
 
 // 源码项目（后端 sys_menu 菜单表）中原来的主菜单栏
 const ORIGIN_MENU_TITLES = [
@@ -102,95 +102,30 @@ const permission = {
 // 读取后端菜单表（sys_menu）中原来的主菜单栏，并注册其路由
 async function loadOriginRoutes() {
   try {
-    // 优先用菜单列表接口：开发级管理员(userType=1)会返回全部菜单，不受角色关联(sys_role_menu)限制
-    const flatMenus = await loadAllFlatMenus();
-    if (flatMenus.length) {
-      const originMenus = buildMenuTree(flatMenus)
-        .filter((menu) => ORIGIN_MENU_TITLES.indexOf(menu.menuName) !== -1)
-        .map((menu) => toOriginRouter(menu, true));
-      if (originMenus.length) {
-        return registerOriginRoutes(originMenus);
-      }
-    }
-    // 退回按角色可见的 getRouters 结果
     const res = await getRouters();
-    const routers = (res && res.data) || [];
-    const fallbackMenus = routers.filter(
+    const menus = (res && res.data) || [];
+    // 只保留源码项目原来的主菜单栏（含 visible='1' 被标记为 hidden 的菜单，下拉需完整展示）
+    const originMenus = menus.filter(
       (menu) => menu.meta && ORIGIN_MENU_TITLES.indexOf(menu.meta.title) !== -1
     );
-    return registerOriginRoutes(fallbackMenus);
+    if (originMenus.length === 0) {
+      return [];
+    }
+    // 保留层级的菜单，用于顶部下拉与侧边栏展示
+    const nestedRoutes = filterAsyncRouter(deepClone(originMenus), false, false);
+    // 扁平化后的路由，用于注册到 router，保证子菜单可正常跳转
+    const registeredRoutes = filterAsyncRouter(
+      deepClone(originMenus),
+      false,
+      true
+    );
+    removeNoRedirect(registeredRoutes);
+    // 注意：原始菜单路由与现有静态路由可能冲突（如 /system），
+    // 这里不再 addRoutes，只保存到 store 供“原始菜单”下拉展示，避免登录后跳 404
+    return nestedRoutes;
   } catch (e) {
     return [];
   }
-}
-
-// 获取菜单表的扁平数据，接口不可用（无权限/异常）时返回空并退回 getRouters
-async function loadAllFlatMenus() {
-  try {
-    const res = await listMenu();
-    return (res && res.data) || [];
-  } catch (e) {
-    console.warn("[原始菜单] /system/menu/list 获取失败，退回 getRouters", e);
-    return [];
-  }
-}
-
-// 把扁平菜单行按 parent_id 组装成树（忽略按钮）
-function buildMenuTree(list) {
-  const nodeMap = new Map();
-  const tree = [];
-  list.forEach((item) => {
-    if (item.menuType === "M" || item.menuType === "C") {
-      nodeMap.set(item.menuId, Object.assign({}, item, { children: [] }));
-    }
-  });
-  nodeMap.forEach((node) => {
-    const parent = nodeMap.get(node.parentId);
-    if (parent) {
-      parent.children.push(node);
-    } else {
-      tree.push(node);
-    }
-  });
-  return tree;
-}
-
-// 对齐后端 buildMenus 的规则，把菜单行转成前端路由
-function toOriginRouter(menu, isTop) {
-  const isDir = menu.menuType === "M";
-  const path = String(menu.path || "").replace(/^\/+/, "");
-  const children = (menu.children || []).map((child) =>
-    toOriginRouter(child, false)
-  );
-  const route = {
-    path: isTop && isDir ? "/" + path : path,
-    name: path ? path.charAt(0).toUpperCase() + path.slice(1) : "",
-    hidden: menu.visible === "1",
-    component: isDir ? (isTop ? "Layout" : "ParentView") : menu.component,
-    meta: { title: menu.menuName, icon: menu.icon },
-  };
-  if (children.length) {
-    route.children = children;
-    if (isDir) {
-      route.alwaysShow = true;
-      route.redirect = "noRedirect";
-    }
-  }
-  return route;
-}
-
-// 注册原始菜单路由，并返回用于顶部下拉与侧边栏展示的层级菜单
-function registerOriginRoutes(originMenus) {
-  if (!originMenus || originMenus.length === 0) {
-    return [];
-  }
-  // 保留层级的菜单，用于顶部下拉与侧边栏展示
-  const nestedRoutes = filterAsyncRouter(deepClone(originMenus), false, false);
-  // 扁平化后的路由，用于注册到 router，保证子菜单可正常跳转
-  const registeredRoutes = filterAsyncRouter(deepClone(originMenus), false, true);
-  removeNoRedirect(registeredRoutes);
-  router.addRoutes(registeredRoutes);
-  return nestedRoutes;
 }
 
 // 后端父级菜单 redirect 为 noRedirect，注册前移除，避免路由解析异常
@@ -223,13 +158,7 @@ function filterAsyncRouter(asyncRouterMap, lastRouter = false, type = false) {
       } else if (route.component === "InnerLink") {
         route.component = InnerLink;
       } else if (typeof route.component === "string") {
-        try {
-          route.component = loadView(route.component);
-        } catch (e) {
-          // 视图文件不存在时跳过该菜单，避免影响其它原始菜单注册
-          console.warn("[原始菜单] 视图不存在，已跳过：", route.component);
-          return false;
-        }
+        route.component = loadView(route.component);
       }
     }
     if (route.children != null && route.children && route.children.length) {

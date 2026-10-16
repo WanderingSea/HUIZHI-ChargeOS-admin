@@ -18,6 +18,7 @@
       >
     </template>
 
+
     <!-- 顶部菜单超出数量折叠 -->
     <el-submenu
       :style="{ '--theme': theme }"
@@ -39,7 +40,7 @@
       </template>
     </el-submenu>
 
-    <!-- 源码项目中的原始菜单 -->
+    <!-- 原始菜单（源码项目 sys_menu 中的主菜单栏） -->
     <el-submenu
       :style="{ '--theme': theme }"
       index="origin"
@@ -47,11 +48,14 @@
     >
       <template slot="title">原始菜单</template>
       <origin-item
-        v-for="(item, index) in originMenus"
-        :key="index"
-        :item="item"
+        v-for="(menu, index) in originMenus"
+        :key="(menu.path || '') + index"
+        :item="menu"
+        base-path=""
+        @click.native="handleOriginClick"
       />
     </el-submenu>
+    
   </el-menu>
 </template>
 
@@ -91,23 +95,18 @@ export default {
       });
       return topMenus;
     },
+    // “原始菜单”下拉显示的菜单（完整展示，不过滤后端标记为 hidden 的菜单）
+    originMenus() {
+      return this.$store.state.permission.originRouters || [];
+    },
     // 所有的路由信息
     routers() {
       return this.$store.state.permission.topbarRouters;
     },
-    // 原始菜单（源码项目后端菜单表）
-    originRouters() {
-      return this.$store.state.permission.originRouters;
-    },
-    // “原始菜单”下拉显示的菜单（完整展示，不过滤后端标记为 hidden 的菜单）
-    originMenus() {
-      return this.originRouters;
-    },
     // 设置子路由
     childrenMenus() {
       var childrenMenus = [];
-      var allRouters = this.routers.concat(this.originRouters);
-      allRouters.map((router) => {
+      this.routers.map((router) => {
         for (var item in router.children) {
           if (router.children[item].parentPath === undefined) {
             if (router.path === "/") {
@@ -159,11 +158,7 @@ export default {
   },
   methods: {
     setVisibleNumber() {
-      // 预留右侧区域：搜索图标外扩（展开约 220px）、头像区，以及“原始菜单”一项的宽度，
-      // 避免顶部菜单过长而侵入搜索图标展开的区域
-      const reservedWidth = 420;
-      const bodyWidth = document.body.getBoundingClientRect().width;
-      const width = (bodyWidth - reservedWidth) / 3;
+      const width = document.body.getBoundingClientRect().width / 3;
       this.visibleNumber = Math.max(parseInt(width / 85), 7);
     },
     // 默认激活的路由
@@ -185,8 +180,7 @@ export default {
       } else if (key.indexOf("/redirect") !== -1) {
         this.$router.push({ path: key.replace("/redirect", "") });
       } else {
-        // 原始菜单点击子项时，用其所属的一级菜单来刷新侧边栏
-        this.activeRoutes(this.originTopPath(key));
+        this.activeRoutes(key);
         const menu = this.topMenus.find((m) => m.path === key); //优先使用路由配置的redirect，不要自己读children（children会被filterAsyncRouter删除）
         if (menu && menu.redirect) {
           this.$router.push({ path: menu.redirect });
@@ -194,13 +188,6 @@ export default {
           this.$router.push({ path: key });
         }
       }
-    },
-    // 若为原始菜单，返回其所属的一级菜单 path，否则原样返回
-    originTopPath(key) {
-      const top = this.originRouters.find(
-        (router) => key === router.path || key.indexOf(router.path + "/") === 0
-      );
-      return top ? top.path : key;
     },
 
     // 当前激活的路由
@@ -220,6 +207,12 @@ export default {
     },
     ishttp(url) {
       return url.indexOf("http://") !== -1 || url.indexOf("https://") !== -1;
+    },
+    // 原始菜单点击：当前项目未实现对应页面，友好提示
+    handleOriginClick(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.$modal.msgWarning("该菜单功能暂未在当前项目中实现");
     },
   },
 };
