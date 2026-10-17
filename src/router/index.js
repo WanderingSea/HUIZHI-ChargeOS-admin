@@ -599,6 +599,14 @@ export const staticMenuRoutes = [
     ],
   },
 
+  //开发管理
+  {
+    path: "/develop",
+    component: Layout,
+    redirect: "/develop/account",
+    meta: { title: "开发管理", icon: "system" },
+    children: [],
+  },
   //   { path: "*", redirect: "/404", hidden: true },
 ];
 
