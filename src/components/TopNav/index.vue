@@ -18,7 +18,6 @@
       >
     </template>
 
-
     <!-- 顶部菜单超出数量折叠 -->
     <el-submenu
       :style="{ '--theme': theme }"
@@ -52,10 +51,8 @@
         :key="(menu.path || '') + index"
         :item="menu"
         base-path=""
-        @click.native="handleOriginClick"
       />
     </el-submenu>
-    
   </el-menu>
 </template>
 
@@ -128,6 +125,10 @@ export default {
     // 默认激活的菜单
     activeMenu() {
       const path = this.$route.path;
+      // 原始菜单路由直接返回完整路径，确保菜单项正确高亮
+      if (path.indexOf("/origin") === 0) {
+        return path;
+      }
       let activePath = this.defaultRouter();
       if (path.lastIndexOf("/") > 0) {
         const tmpPath = path.substring(1, path.length);
@@ -179,6 +180,9 @@ export default {
         window.open(key, "_blank");
       } else if (key.indexOf("/redirect") !== -1) {
         this.$router.push({ path: key.replace("/redirect", "") });
+      } else if (key.indexOf("/origin") === 0) {
+        // 原始菜单导航
+        this.handleOriginSelect(key);
       } else {
         this.activeRoutes(key);
         const menu = this.topMenus.find((m) => m.path === key); //优先使用路由配置的redirect，不要自己读children（children会被filterAsyncRouter删除）
@@ -188,6 +192,96 @@ export default {
           this.$router.push({ path: key });
         }
       }
+    },
+    // 原始菜单导航处理
+    handleOriginSelect(key) {
+      const originMenus = this.originMenus;
+      let targetMenu = null;
+      let parentMenu = null;
+
+      // 遍历查找匹配的菜单及其父级菜单
+      for (const topMenu of originMenus) {
+        const topPath = topMenu.path || "";
+        if (topPath === key) {
+          targetMenu = topMenu;
+          parentMenu = topMenu;
+          break;
+        }
+        if (topMenu.children && topMenu.children.length) {
+          for (const child of topMenu.children) {
+            const childFullPath = this.resolveOriginPath(topPath, child.path);
+            if (childFullPath === key) {
+              targetMenu = child;
+              parentMenu = topMenu;
+              break;
+            }
+            // 处理三级菜单
+            if (child.children && child.children.length) {
+              for (const grandchild of child.children) {
+                const grandchildPath = this.resolveOriginPath(
+                  childFullPath,
+                  grandchild.path
+                );
+                if (grandchildPath === key) {
+                  targetMenu = grandchild;
+                  parentMenu = child;
+                  break;
+                }
+              }
+            }
+            if (targetMenu) break;
+          }
+        }
+        if (targetMenu) break;
+      }
+
+      // 设置侧边栏为父级菜单的子菜单（转换为绝对路径）
+      if (parentMenu && parentMenu.children) {
+        const sidebarRoutes = this.convertToAbsolutePaths(
+          parentMenu.children,
+          parentMenu.path
+        );
+        this.$store.commit("SET_SIDEBAR_ROUTERS", sidebarRoutes);
+      }
+
+      // 导航到目标菜单
+      if (targetMenu) {
+        if (targetMenu.children && targetMenu.children.length > 0) {
+          const firstChild = targetMenu.children[0];
+          const firstChildPath = this.resolveOriginPath(
+            targetMenu.path,
+            firstChild.path
+          );
+          this.$router.push({ path: firstChildPath });
+        } else {
+          this.$router.push({ path: key });
+        }
+      } else {
+        this.$router.push({ path: key });
+      }
+    },
+    // 将子菜单路径转换为绝对路径，供侧边栏使用
+    convertToAbsolutePaths(children, parentPath) {
+      return children.map((child) => {
+        const childCopy = { ...child };
+        const childFullPath = this.resolveOriginPath(parentPath, child.path);
+        childCopy.path = childFullPath;
+        if (child.children && child.children.length) {
+          childCopy.children = this.convertToAbsolutePaths(
+            child.children,
+            childFullPath
+          );
+        }
+        return childCopy;
+      });
+    },
+    // 解析原始菜单路径
+    resolveOriginPath(parentPath, childPath) {
+      if (!childPath) return parentPath || "";
+      if (/^https?:\/\//.test(childPath)) return childPath;
+      if (childPath.charAt(0) === "/") return childPath;
+      const base = (parentPath || "").replace(/\/+$/, "");
+      return base ? base + "/" + childPath : "/" + childPath;
     },
 
     // 当前激活的路由
@@ -207,12 +301,6 @@ export default {
     },
     ishttp(url) {
       return url.indexOf("http://") !== -1 || url.indexOf("https://") !== -1;
-    },
-    // 原始菜单点击：当前项目未实现对应页面，友好提示
-    handleOriginClick(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      this.$modal.msgWarning("该菜单功能暂未在当前项目中实现");
     },
   },
 };
