@@ -92,9 +92,11 @@ export default {
       });
       return topMenus;
     },
-    // “原始菜单”下拉显示的菜单（完整展示，不过滤后端标记为 hidden 的菜单）
+    // "原始菜单"下拉显示的菜单（按后端 visible 字段过滤隐藏菜单）
     originMenus() {
-      return this.$store.state.permission.originRouters || [];
+      return (this.$store.state.permission.originRouters || []).filter(
+        (menu) => menu.hidden !== true
+      );
     },
     // 所有的路由信息
     routers() {

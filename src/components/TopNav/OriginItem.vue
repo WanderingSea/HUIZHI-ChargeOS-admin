@@ -36,8 +36,8 @@ export default {
   },
   computed: {
     children() {
-      // 原始菜单完整展示，不过滤后端标记为 hidden 的子菜单
-      return this.item.children || [];
+      // 按后端 visible 字段过滤隐藏子菜单
+      return (this.item.children || []).filter((c) => c.hidden !== true);
     },
     hasChildren() {
       return this.children.length > 0;
