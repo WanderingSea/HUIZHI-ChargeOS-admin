@@ -140,7 +140,8 @@ export const staticMenuRoutes = [
         meta: { title: "平台公告", icon: "message" },
       },
     ],
-  }, //  组织与权限
+  },
+  //  组织与权限
 
   {
     path: "/org",
@@ -148,12 +149,12 @@ export const staticMenuRoutes = [
     redirect: "/org/dept",
     meta: { title: "组织与权限", icon: "peoples" },
     children: [
-      // {
-      //   path: "dept",
-      //   component: Placeholder,
-      //   name: "OrgDept",
-      //   meta: { title: "机构管理", icon: "tree" },
-      // },
+      {
+        path: "dept",
+        component: Placeholder,
+        name: "OrgDept",
+        meta: { title: "机构管理", icon: "tree" },
+      },
       {
         path: "internal-user",
         component: Placeholder,
@@ -599,14 +600,14 @@ export const staticMenuRoutes = [
     ],
   },
 
-  //开发管理
-  {
-    path: "/develop",
-    component: Layout,
-    redirect: "/develop/account",
-    meta: { title: "开发管理", icon: "system" },
-    children: [],
-  },
+  // //开发管理
+  // {
+  //   path: "/develop",
+  //   component: Layout,
+  //   redirect: "/develop/account",
+  //   meta: { title: "开发管理", icon: "system" },
+  //   children: [],
+  // },
   //   { path: "*", redirect: "/404", hidden: true },
 ];
 

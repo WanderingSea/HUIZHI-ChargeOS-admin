@@ -91,28 +91,22 @@ const permission = {
   },
 };
 
-// 【核心修复 1】转换扁平数据为路由，并自动补全 Layout / ParentView
 function transformMenusToRoutes(menus) {
   if (!menus || !Array.isArray(menus)) return [];
 
-  // 1. 过滤掉按钮 (F) 和 停用 (1) 的菜单
   const validMenus = menus.filter((m) => {
     const menuType = String(m.menuType ?? "");
     const status = String(m.status ?? "");
     return menuType !== "F" && status === "0";
   });
 
-  // 2. 构建树，注意 handleTree 必须传 parentId 字段
   const tree = handleTree(validMenus, "menuId", "parentId");
-
-  // 3. 递归转换
   return tree.map((menu) => convertMenuToRoute(menu, true));
 }
 
 function convertMenuToRoute(menu, isRoot = false) {
   let comp = menu.component;
 
-  // 【核心修复】：如果是顶级菜单，没配组件，强制给 Layout；如果是中间目录，强制给 ParentView
   if (!comp || comp === "" || comp === "null") {
     if (isRoot) {
       comp = "Layout";
@@ -162,16 +156,12 @@ async function loadOriginRoutes() {
       const res = await listMenu();
       const rawMenus = (res && res.data) || [];
       menus = transformMenusToRoutes(rawMenus);
-      console.log(
-        "【Debug】转换后的一级菜单列表:",
-        menus.map((m) => m.meta.title)
-      );
     } catch (e) {
       const res = await getRouters();
       menus = (res && res.data) || [];
     }
 
-    // 匹配我们需要提取的原始菜单
+    // 匹配原始菜单
     const originMenus = menus.filter(
       (menu) =>
         menu.meta &&
@@ -179,45 +169,25 @@ async function loadOriginRoutes() {
         ORIGIN_MENU_TITLES.includes(menu.meta.title.trim())
     );
 
-    console.log(
-      "【Debug】匹配到的原始菜单(准备注入路由):",
-      originMenus.map((m) => m.meta.title)
-    );
-
     if (originMenus.length === 0) {
-      console.warn(
-        "【Warning】未匹配到任何原始菜单，请检查后端菜单名称是否与 ORIGIN_MENU_TITLES 完全一致！"
-      );
+      console.warn("【Warning】未匹配到任何原始菜单！");
       return [];
     }
 
-    // 保留层级的菜单，用于顶部下拉与侧边栏展示
+    // 【关键修改】：我们不再将其扁平化，而是保留树形结构注册
     const nestedRoutes = filterAsyncRouter(
       deepClone(originMenus),
       false,
       false
     );
-    // 扁平化后的路由，用于注册到 router 实例
-    const registeredRoutes = filterAsyncRouter(
-      deepClone(originMenus),
-      false,
-      true
-    );
 
-    removeNoRedirect(registeredRoutes);
+    // 加上 /origin 前缀
     prefixOriginRoutes(nestedRoutes, "/origin");
-    prefixOriginRoutes(registeredRoutes, "/origin");
 
-    // 最终安全检查：递归转换所有残留的字符串组件
-    cleanupStringComponents(registeredRoutes);
     cleanupStringComponents(nestedRoutes);
 
-    console.log(
-      "【Debug】最终准备注册到 Vue Router 的扁平路由:",
-      registeredRoutes
-    );
-
-    router.addRoutes(registeredRoutes);
+    console.log("【Debug】注入的带层级结构的原始路由:", nestedRoutes);
+    router.addRoutes(nestedRoutes);
 
     return nestedRoutes;
   } catch (e) {
@@ -226,21 +196,10 @@ async function loadOriginRoutes() {
   }
 }
 
-function removeNoRedirect(routes) {
-  routes.forEach((route) => {
-    if (route.redirect === "noRedirect") {
-      delete route.redirect;
-    }
-    if (route.children && route.children.length) {
-      removeNoRedirect(route.children);
-    }
-  });
-}
-
-// 【核心修复 2】给原始菜单统一加上 /origin 前缀
 function prefixOriginRoutes(routes, prefix, isChild = false) {
   routes.forEach((route) => {
     if (!isChild) {
+      // 顶级路由加前缀
       if (route.path && route.path.charAt(0) === "/") {
         route.path = prefix + route.path;
       } else if (route.path) {
@@ -252,7 +211,8 @@ function prefixOriginRoutes(routes, prefix, isChild = false) {
       }
     }
 
-    if (route.redirect) {
+    // 重定向路径处理
+    if (route.redirect && route.redirect !== "noRedirect") {
       route.redirect = route.redirect.startsWith("/")
         ? prefix + route.redirect
         : prefix + "/" + route.redirect;
@@ -310,7 +270,7 @@ function filterAsyncRouter(asyncRouterMap, lastRouter = false, type = false) {
             route.component = loadView(compStr);
           } catch (error) {
             console.warn(
-              `[路由拦截] 加载组件异常: ${compStr}，已跳过该路由:`,
+              `[路由拦截] 加载组件异常: ${compStr}，已跳过:`,
               route.path
             );
             return false;
@@ -323,7 +283,6 @@ function filterAsyncRouter(asyncRouterMap, lastRouter = false, type = false) {
 
     if (route.children != null && route.children && route.children.length) {
       route.children = filterAsyncRouter(route.children, route, type);
-      // 如果子路由被过滤空了，只有 ParentView 才丢弃，Layout 尽量保留
       if (route.children.length === 0 && route.component === ParentView) {
         return false;
       }
@@ -339,7 +298,7 @@ function filterAsyncRouter(asyncRouterMap, lastRouter = false, type = false) {
 
 function filterChildren(childrenMap, lastRouter = false) {
   var children = [];
-  childrenMap.forEach((el, index) => {
+  childrenMap.forEach((el) => {
     if (el.children && el.children.length) {
       if (
         (el.component === "ParentView" || el.component === ParentView) &&
@@ -384,7 +343,7 @@ export function filterDynamicRoutes(routes) {
   return res;
 }
 
-// 恢复项目原始的 loadView 实现：开发环境用 require，生产环境用 import
+// 恢复项目原始加载逻辑
 export const loadView = (view) => {
   if (process.env.NODE_ENV === "development") {
     return (resolve) => require([`@/views/${view}`], resolve);
